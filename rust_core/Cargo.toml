@@ -1,0 +1,15 @@
+[package]
+name = "rust_core"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+uniffi = { version = "0.31.0", features = ["cli"] }
+thiserror = "2.0.18"
+typst = "0.14.2"
+typst-svg = "0.14.2"
+typst-render = "0.14.2"
+usvg = "0.47.0"
