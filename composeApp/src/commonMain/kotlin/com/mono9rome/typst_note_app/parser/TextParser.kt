@@ -8,7 +8,8 @@ fun parseToTextBlocks(markdown: String): List<TextBlock> {
     // Group 1: "$ " と " $" で囲まれたブロック数式
     // Group 2: "$" と "$" で囲まれたインライン数式
     // ※ 順番が重要。ブロック数式を先に評価させる。
-    val regex = Regex("""\$ (.*?) \$|\$(.*?)\$""")
+    // ※ 「直前に \ がないこと」を意味する否定あと読み (?<!\\) をつけることでエスケープ処理に対応
+    val regex = Regex("""(?<!\\)\$ (.*?) (?<!\\)\$|(?<!\\)\$(.*?)(?<!\\)\$""")
 
     // すべてのマッチ箇所
     val matchResults = regex.findAll(markdown)
@@ -23,8 +24,10 @@ fun parseToTextBlocks(markdown: String): List<TextBlock> {
         // 1. マッチした箇所の「手前」までの文字列を取り出し、Plane（通常の文字列）として扱う
         val textBeforeMatch = markdown.substring(lastIndex, match.range.first).trimReturn()
         if (textBeforeMatch.isNotEmpty()) {
+            // $ 前のエスケープ文字 (\) を取り除く
+            val unescapedText = textBeforeMatch.replace("\\$", "$")
             currentInlineText.add(
-                InlineTextFragment.Plane(textBeforeMatch)
+                InlineTextFragment.Plane(unescapedText)
             )
         }
 
@@ -61,8 +64,9 @@ fun parseToTextBlocks(markdown: String): List<TextBlock> {
     // 最後のマッチ以降に残っている文字列を Plane として追加
     val remainingText = markdown.substring(lastIndex).trimReturn()
     if (remainingText.isNotEmpty()) {
+        val unescapedRemainingText = remainingText.replace("\\$", "$")
         currentInlineText.add(
-            InlineTextFragment.Plane(remainingText)
+            InlineTextFragment.Plane(unescapedRemainingText)
         )
     }
 

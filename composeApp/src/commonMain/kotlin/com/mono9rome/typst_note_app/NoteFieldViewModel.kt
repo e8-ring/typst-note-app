@@ -2,14 +2,13 @@ package com.mono9rome.typst_note_app
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.mono9rome.typst_note_app.model.RenderedTextBlock
+import com.mono9rome.typst_note_app.model.ContentBlock
 import com.mono9rome.typst_note_app.render.MathRenderer
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import me.tatarka.inject.annotations.Inject
 
 data class SourceCode(val value: String)
-data class OutputContent(val content: List<RenderedTextBlock>)
 
 @Inject
 class NoteFieldViewModel(
@@ -19,14 +18,14 @@ class NoteFieldViewModel(
     data class UiState(
         val sourceCode: SourceCode,
         val textSizeSp: Float,
-        val outputContent: OutputContent,
+        val contentBlocks: List<ContentBlock>,
         val isCompileError: Boolean,
     ) {
         companion object {
             val default = UiState(
                 sourceCode = SourceCode(""),
                 textSizeSp = 18f,
-                outputContent = OutputContent(emptyList()),
+                contentBlocks = emptyList(),
                 isCompileError = false,
             )
         }
@@ -103,10 +102,10 @@ class NoteFieldViewModel(
         }
     }
 
-    private fun updateOutputContent(outputContent: OutputContent) {
+    private fun updateOutputContent(contentBlocks: List<ContentBlock>) {
         _uiState.update {
             it.copy(
-                outputContent = outputContent,
+                contentBlocks = contentBlocks,
             )
         }
     }

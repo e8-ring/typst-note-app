@@ -28,7 +28,7 @@ fun NoteField(
         textSizeSp = uiState.textSizeSp,
         onEdited = viewModel::onEdited,
         textSizeChanger = viewModel::updateTextSizeSp,
-        outputContent = uiState.outputContent,
+        outputContent = uiState.contentBlocks,
         modifier = modifier
     )
 }
@@ -134,7 +134,7 @@ fun OutputViewer(
 //                        )
 //                    )
                 ContentRenderer(
-                    outputContent = outputContent,
+                    contentBlocks = outputContent,
                     textSizeSp = textSizeSp,
                 )
             }
