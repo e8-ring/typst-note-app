@@ -20,33 +20,47 @@ class RustMathRenderer : MathRenderer {
         textSizeSp: Float,
     ): OutputContent? {
         // 暫定
-        val inlineText = parseToTextBlocks(sourceCode.value).takeFirstInline()
+        val textBlocks = parseToTextBlocks(sourceCode.value)
 
-        val renderedInlineText = inlineText.render(textSizeSp)
+        val renderedInlineText = textBlocks.render(textSizeSp)
 
         return renderedInlineText?.let(::OutputContent)
     }
 
-    private fun List<TextBlock>.takeFirstInline(): InlineText =
-        this.filterIsInstance<TextBlock.Inline>()[0]
-            .text
-
-    private suspend fun InlineText.render(textSizeSp: Float): RenderedInlineText? =
+    private suspend fun List<TextBlock>.render(textSizeSp: Float): List<RenderedTextBlock>? =
         recover({
-            this@render.map { fragment ->
-                when (fragment) {
-                    is InlineTextFragment.Plane -> {
-                        RenderedInlineTextFragment.Plane(fragment.content)
+            this@render.map { textBlock ->
+                when (textBlock) {
+                    is TextBlock.Inline -> {
+                        RenderedTextBlock.Inline(textBlock.text.render(textSizeSp))
                     }
-                    is InlineTextFragment.Math -> {
-                        RenderedInlineTextFragment.Math(
-                            source = fragment.content,
-                            content = mathToPng(fragment.content, textSizeSp)
+                    is TextBlock.Math -> {
+                        RenderedTextBlock.Math(
+                            source = textBlock.content,
+                            content = mathToPng(textBlock.content, textSizeSp)
                         )
                     }
                 }
             }
         }) { _ -> null }
+
+    context(_: Raise<Err>)
+    private suspend fun InlineText.render(textSizeSp: Float): RenderedInlineText =
+        this@render.map { fragment ->
+            when (fragment) {
+                is InlineTextFragment.Plane -> {
+                    RenderedInlineTextFragment.Plane(fragment.content)
+                }
+
+                is InlineTextFragment.Math -> {
+                    RenderedInlineTextFragment.Math(
+                        source = fragment.content,
+                        content = mathToPng(fragment.content, textSizeSp)
+                    )
+                }
+            }
+        }
+
 
     context(_: Raise<Err>)
     private suspend fun mathToPng(

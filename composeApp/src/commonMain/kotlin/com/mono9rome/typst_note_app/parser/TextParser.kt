@@ -21,7 +21,7 @@ fun parseToTextBlocks(markdown: String): List<TextBlock> {
 
     for (match in matchResults) {
         // 1. マッチした箇所の「手前」までの文字列を取り出し、Plane（通常の文字列）として扱う
-        val textBeforeMatch = markdown.substring(lastIndex, match.range.first)
+        val textBeforeMatch = markdown.substring(lastIndex, match.range.first).trimReturn()
         if (textBeforeMatch.isNotEmpty()) {
             currentInlineText.add(
                 InlineTextFragment.Plane(textBeforeMatch)
@@ -59,7 +59,7 @@ fun parseToTextBlocks(markdown: String): List<TextBlock> {
     }
 
     // 最後のマッチ以降に残っている文字列を Plane として追加
-    val remainingText = markdown.substring(lastIndex)
+    val remainingText = markdown.substring(lastIndex).trimReturn()
     if (remainingText.isNotEmpty()) {
         currentInlineText.add(
             InlineTextFragment.Plane(remainingText)
@@ -75,3 +75,5 @@ fun parseToTextBlocks(markdown: String): List<TextBlock> {
 
     return textBlocks
 }
+
+private fun String.trimReturn(): String = this.trim { it == '\n' || it == '\r' }

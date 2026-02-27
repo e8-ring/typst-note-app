@@ -23,11 +23,12 @@ sealed interface TextBlock {
 }
 
 /* --- render 済みデータ --- */
+
 sealed interface RenderedInlineTextFragment {
     // 数式を含まない文字列
     data class Plane(val content: String) : RenderedInlineTextFragment
 
-    // インライン数式の画像
+    // インライン数式
     data class Math(
         val source: String,
         val content: ByteArray
@@ -35,3 +36,14 @@ sealed interface RenderedInlineTextFragment {
 }
 
 typealias RenderedInlineText = List<RenderedInlineTextFragment>
+
+sealed interface RenderedTextBlock {
+    // インライン数式を含む通常の文章
+    data class Inline(val text: RenderedInlineText) : RenderedTextBlock
+
+    // ブロック数式
+    data class Math(
+        val source: String,
+        val content: ByteArray
+    ) : RenderedTextBlock
+}

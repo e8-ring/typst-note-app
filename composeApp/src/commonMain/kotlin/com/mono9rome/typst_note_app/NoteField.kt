@@ -13,7 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.mono9rome.typst_note_app.ui.InlineTextRenderer
+import com.mono9rome.typst_note_app.ui.ContentRenderer
 
 @Composable
 fun NoteField(
@@ -28,7 +28,7 @@ fun NoteField(
         textSizeSp = uiState.textSizeSp,
         onEdited = viewModel::onEdited,
         textSizeChanger = viewModel::updateTextSizeSp,
-        output = uiState.outputContent,
+        outputContent = uiState.outputContent,
         modifier = modifier
     )
 }
@@ -39,7 +39,7 @@ fun NoteFieldBody(
     textSizeSp: Float,
     onEdited: (SourceCode) -> Unit,
     textSizeChanger: (Float?) -> Unit,
-    output: OutputContent,
+    outputContent: OutputContent,
     modifier: Modifier = Modifier
 ) {
     Row(
@@ -55,7 +55,7 @@ fun NoteFieldBody(
         )
         OutputViewer(
             textSizeSp = textSizeSp,
-            output = output,
+            outputContent = outputContent,
             modifier = Modifier.weight(0.5f)
         )
     }
@@ -98,7 +98,7 @@ fun SourceEditor(
 @Composable
 fun OutputViewer(
     textSizeSp: Float,
-    output: OutputContent,
+    outputContent: OutputContent,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -133,8 +133,8 @@ fun OutputViewer(
 //                            Pair("eqn", output.content)
 //                        )
 //                    )
-                InlineTextRenderer(
-                    text = output.content,
+                ContentRenderer(
+                    outputContent = outputContent,
                     textSizeSp = textSizeSp,
                 )
             }

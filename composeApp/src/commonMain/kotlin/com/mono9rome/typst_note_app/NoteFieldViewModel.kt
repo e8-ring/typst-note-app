@@ -2,14 +2,14 @@ package com.mono9rome.typst_note_app
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.mono9rome.typst_note_app.model.RenderedInlineText
+import com.mono9rome.typst_note_app.model.RenderedTextBlock
 import com.mono9rome.typst_note_app.render.MathRenderer
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import me.tatarka.inject.annotations.Inject
 
 data class SourceCode(val value: String)
-data class OutputContent(val content: RenderedInlineText)
+data class OutputContent(val content: List<RenderedTextBlock>)
 
 @Inject
 class NoteFieldViewModel(
