@@ -1,5 +1,6 @@
 package com.mono9rome.typst_note_app.parser
 
+import arrow.core.toNonEmptyListOrNull
 import com.mono9rome.typst_note_app.model.BoldNode
 import com.mono9rome.typst_note_app.model.BulletList
 import com.mono9rome.typst_note_app.model.ContentBlock
@@ -25,41 +26,68 @@ class SourceParser {
     private val stateManager = StateManager()
 
     fun parse(source: String): List<ContentBlock> {
-        val lines = source.lines()
-
-        return parseBlocks(lines, 0).also {
-            stateManager.initState()
+        val lines = source.lines().toNonEmptyListOrNull() ?: return emptyList()
+        val state = ParserState.new(lines)
+        return with(state) {
+            parseBlocks(0)
         }
     }
 
 
 
     // 指定されたインデント (minIndent) 以上のブロック群をパースする
+    context(state: ParserState)
     private fun parseBlocks(
-        lines: List<String>,
+        lines: List<SourceLine>,
         minIndent: Int
     ): List<ContentBlock> {
         val blocks = mutableListOf<ContentBlock>()
-
-        while (currentLineNumber < lines.size) {
-
-            val line = lines[currentLineNumber]
+        while (state.isNotReachedTheLastLine()) {
+            // ループの各回の開始時点での現在の行を取得する
+            val line = state.currentLine
 
             // この行が空行なら次の行に進む
             if (line.isBlank()) {
+                // TODO 次の行へ
+                continue
+            }
+
+            // インデントが浅くなったらこの行はスコープ外なので終了
+            if (line.countIndent() < minIndent) break
+
+            when (line.lineType()) {
+                LineType.BulletListItem -> {
+                    blocks.add(parseList(lines, line.countIndent(), ListType.BULLET))
+                }
+                LineType.NumberedListItem -> {
+                    blocks.add(parseList(lines, line.countIndent(), ListType.NUMBERED))
+                }
+                LineType.ParagraphLine -> {
+                    blocks.add(parseParagraph(lines, minIndent))
+                }
+            }
+        }
+
+        while (state.isNotReachedTheLastLine()) {
+
+            val currentLine = state.currentLine
+
+            // この行が空行なら次の行に進む
+            if (currentLine.isBlank()) {
                 stateManager.moveToNextLine()
                 continue
             }
 
-            val indent = countIndent(line)
+            val indent = countIndent(currentLine)
 
             // インデントが浅くなったらこの行はスコープ外なので終了
             if (indent < minIndent) break
 
-            val bulletMatch = bulletRegex.find(line)
-            val numberedMatch = numberedRegex.find(line)
+            val bulletMatch = bulletRegex.find(currentLine)
+            val numberedMatch = numberedRegex.find(currentLine)
 
             // 処理（ここで行が進む）
+
             if (bulletMatch != null && indent == bulletMatch.groups[1]?.value?.length) {
                 blocks.add(parseList(lines, indent, ListType.BULLET))
             } else if (numberedMatch != null && indent == numberedMatch.groups[1]?.value?.length) {
@@ -71,6 +99,9 @@ class SourceParser {
         return blocks
     }
 
+    // 注意 : 現状、リスト項目間に空行を開けることは許されない。
+    // リスト項目内の空行ならよい。
+    context(state: ParserState)
     private fun parseList(
         lines: List<String>,
         listIndent: Int,
@@ -78,34 +109,20 @@ class SourceParser {
     ): ContentList {
         val items = mutableListOf<ContentList.Item>()
 
-        while (currentLineNumber < lines.size) {
-            // リストアイテム間の空行を読み飛ばして次のアイテムを探す
-            var peekPos = currentLineNumber
-            while (peekPos < lines.size && lines[peekPos].isBlank()) peekPos++
-            if (peekPos >= lines.size) {
-                currentLineNumber = peekPos
-                break
-            }
-
-            val line = lines[peekPos]
-            val indent = countIndent(line)
-
-            // インデントが浅くなったらこの行はリストの外だから終了
-            if (indent < listIndent) break
-
-            // リストの種類が変わっていたら別のリストとして扱うため終了
-            val isBullet = bulletRegex.matches(line) && indent == listIndent
-            val isNumbered = numberedRegex.matches(line) && indent == listIndent
-            if (type == ListType.BULLET && !isBullet) break
-            if (type == ListType.NUMBERED && !isNumbered) break
-
-            currentLineNumber = peekPos
-
+        while (state.isNotReachedTheLastLine()) {
             // 処理（ここで行が進む）
+            // 注意 : ループ最初はかならず制約条件をみたすから実行してよい
             items.add(parseListItem(lines, type))
+
+            if (state.checkNextLineIsInCurrentListOrEOF(type, listIndent)) {
+                state.moveToNextLine()
+            } else break
         }
 
-        return if (type == ListType.BULLET) BulletList(items) else NumberedList(items)
+        return when (type) {
+            ListType.BULLET -> BulletList(items)
+            ListType.NUMBERED -> NumberedList(items)
+        }
     }
 
     private fun parseListItem(
@@ -184,72 +201,57 @@ class SourceParser {
         }
     }
 
-    private inner class ParagraphParser {
-        fun run(
-            lines: List<String>,
-            pos: IntArray,
-            minIndent: Int
-        ): Paragraph {
-            // 途中結果を保持するバッファ
-            val textLines = mutableListOf<String>()
+    context(state: ParserState)
+    fun parseParagraph(
+        minIndent: Int
+    ): Paragraph {
+        // 途中結果を保持するバッファ
+        val textLines = mutableListOf<String>()
 
-            while (pos[0] < lines.size) {
-                val line = lines[pos[0]]
+        while (state.isNotReachedTheLastLine()) {
+            val line = state.currentLine
 
-                // この行が空行なら段落はこの行で終了
-                if (line.isBlank()) {
-                    // 次へ進めてから抜ける
-                    pos[0]++
-                    break
-                }
+            // この行をバッファに追加
+            // 注意 : この関数が呼び出される場合、最初の 1 行目は必ず段落の文章が存在するから、
+            // ループ 1 周目は追加してもよい
+            textLines.add(trimIndentFromLine(line, minIndent))
 
-                // インデントが下がっていたら段落は 1 行前で終了
-                val indent = countIndent(line)
-                if (indent < minIndent) break
-
-                // リストマーカーが出現したら段落は 1 行前で終了
-                if (line.containsListMarker()) {
-                    break
-                }
-
-                // この行をバッファに追加
-                textLines.add(trimIndentFromLine(line, minIndent))
-
-                // 次の行へ
-                pos[0]++
+            // 次の行が同じ段落を構成しているなら、次へ進める。
+            // そうでないなら、ループを抜ける。
+            if (state.checkNextLineIsInCurrentParagraphOrEOF(minIndent)) {
+                state.moveToNextLine()
+            } else {
+                break
             }
-
-            // 改行でつないで1 つの文字列に
-            val paragraphAsString = textLines.joinToString("\n")
-
-            return Paragraph(parseStyle(paragraphAsString))
         }
 
-        private fun String.containsListMarker(): Boolean =
-            bulletRegex.matches(this) || numberedRegex.matches(this)
+        // 改行でつないで1 つの文字列に
+        val paragraphAsString = textLines.joinToString("\n")
 
-        private fun parseStyle(text: String): List<StyleElement> {
-            val elements = mutableListOf<StyleElement>()
-            var lastIndex = 0
+        return Paragraph(parseStyle(paragraphAsString))
+    }
 
-            for (match in boldRegex.findAll(text)) {
-                val startIndex = match.range.first
-                // マッチした部分より前のテキストを TextNode として追加
-                if (startIndex > lastIndex) {
-                    elements.add(RomanNode(text.substring(lastIndex, startIndex)))
-                }
-                // 囲まれていた中身を ItalicNode として追加 (groupValues[2] が中身)
-                elements.add(BoldNode(match.groupValues[2]))
-                lastIndex = match.range.last + 1
+    private fun parseStyle(text: String): List<StyleElement> {
+        val elements = mutableListOf<StyleElement>()
+        var lastIndex = 0
+
+        for (match in boldRegex.findAll(text)) {
+            val startIndex = match.range.first
+            // マッチした部分より前のテキストを TextNode として追加
+            if (startIndex > lastIndex) {
+                elements.add(RomanNode(text.substring(lastIndex, startIndex)))
             }
-
-            // 最後に残ったテキストを追加
-            if (lastIndex < text.length) {
-                elements.add(RomanNode(text.substring(lastIndex)))
-            }
-
-            return elements
+            // 囲まれていた中身を ItalicNode として追加 (groupValues[2] が中身)
+            elements.add(BoldNode(match.groupValues[2]))
+            lastIndex = match.range.last + 1
         }
+
+        // 最後に残ったテキストを追加
+        if (lastIndex < text.length) {
+            elements.add(RomanNode(text.substring(lastIndex)))
+        }
+
+        return elements
     }
     
 }

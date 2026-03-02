@@ -15,8 +15,6 @@ class BlockParser(
     private val bulletRegex = Regex("^(\\s*)([-*+])(?:\\s+(.*))?$")
     private val numberedRegex = Regex("^(\\s*)(\\d+\\.)(?:\\s+(.*))?$")
 
-    enum class ListType { BULLET, NUMBERED }
-
     // 指定されたインデント (minIndent) 以上のブロック群をパースする
     // ※ pos は現在処理中の何行目を処理しているかを参照渡しで保持するための配列で、
     // 0 番目の要素しか用いない。Int が immutable なため。
