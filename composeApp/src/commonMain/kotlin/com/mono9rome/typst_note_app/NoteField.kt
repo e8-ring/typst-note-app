@@ -13,6 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.mono9rome.typst_note_app.model.ContentBlock
 import com.mono9rome.typst_note_app.ui.ContentRenderer
 
 @Composable
@@ -28,7 +29,7 @@ fun NoteField(
         textSizeSp = uiState.textSizeSp,
         onEdited = viewModel::onEdited,
         textSizeChanger = viewModel::updateTextSizeSp,
-        outputContent = uiState.contentBlocks,
+        contentBlocks = uiState.contentBlocks,
         modifier = modifier
     )
 }
@@ -39,7 +40,7 @@ fun NoteFieldBody(
     textSizeSp: Float,
     onEdited: (SourceCode) -> Unit,
     textSizeChanger: (Float?) -> Unit,
-    outputContent: OutputContent,
+    contentBlocks: List<ContentBlock>,
     modifier: Modifier = Modifier
 ) {
     Row(
@@ -55,7 +56,7 @@ fun NoteFieldBody(
         )
         OutputViewer(
             textSizeSp = textSizeSp,
-            outputContent = outputContent,
+            contentBlocks = contentBlocks,
             modifier = Modifier.weight(0.5f)
         )
     }
@@ -98,7 +99,7 @@ fun SourceEditor(
 @Composable
 fun OutputViewer(
     textSizeSp: Float,
-    outputContent: OutputContent,
+    contentBlocks: List<ContentBlock>,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -123,18 +124,8 @@ fun OutputViewer(
                     )
                 )
             ) {
-//                    TypstMathImage(
-//                        pngBytes = output.value,
-//                        textColor = Color.DarkGray,
-//                    )
-//                    DynamicMathText(
-//                        textSizeEm = textSizeEm,
-//                        mathImages = mapOf(
-//                            Pair("eqn", output.content)
-//                        )
-//                    )
                 ContentRenderer(
-                    contentBlocks = outputContent,
+                    contentBlocks = contentBlocks,
                     textSizeSp = textSizeSp,
                 )
             }

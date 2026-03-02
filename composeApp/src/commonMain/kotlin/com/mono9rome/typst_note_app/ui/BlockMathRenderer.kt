@@ -20,7 +20,7 @@ fun BlockMathRenderer(
     blockMath: BlockMath,
     modifier: Modifier = Modifier
 ) {
-    val imageBitmap = makeFromEncoded(blockMath.content).toComposeImageBitmap()
+    val imageBitmap = makeFromEncoded(blockMath.content.content).toComposeImageBitmap()
 
     Box(
         modifier = modifier.fillMaxWidth(),

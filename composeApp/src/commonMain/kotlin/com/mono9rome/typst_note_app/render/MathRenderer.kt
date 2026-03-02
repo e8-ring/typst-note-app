@@ -1,11 +1,12 @@
 package com.mono9rome.typst_note_app.render
 
-import com.mono9rome.typst_note_app.SourceCode
-import com.mono9rome.typst_note_app.model.ContentBlock
+import arrow.core.raise.Raise
+import com.mono9rome.typst_note_app.model.Err
 
 interface MathRenderer {
-    suspend fun renderToPng(
-        sourceCode: SourceCode,
+    context(_: Raise<Err>)
+    suspend fun toPng(
+        source: String,
         textSizeSp: Float,
-    ): List<ContentBlock>?
+    ): MathRepr
 }

@@ -2,8 +2,9 @@ package com.mono9rome.typst_note_app
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import arrow.core.raise.recover
 import com.mono9rome.typst_note_app.model.ContentBlock
-import com.mono9rome.typst_note_app.render.MathRenderer
+import com.mono9rome.typst_note_app.parser.BlockParser
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import me.tatarka.inject.annotations.Inject
@@ -12,7 +13,7 @@ data class SourceCode(val value: String)
 
 @Inject
 class NoteFieldViewModel(
-    private val mathRenderer: MathRenderer
+    private val blockParser: BlockParser,
 ) : ViewModel() {
 
     data class UiState(
@@ -57,6 +58,7 @@ class NoteFieldViewModel(
                 sourceCode = sourceCode,
             )
         }
+        println("updated source code!")
     }
 
     fun updateTextSizeSp(textSizeSp: Float?) = textSizeSp?.let {
@@ -75,12 +77,13 @@ class NoteFieldViewModel(
 
     private suspend fun render(
         sourceCode: SourceCode,
-        textSizeSp: Float
+        @Suppress("unused") textSizeSp: Float // parse 内でフォントサイズ参照するがここでは使ってない
     ) {
-        val outputContent = mathRenderer.renderToPng(sourceCode, textSizeSp)
-        outputContent?.let {
+        println("Start render!")
+        val contentBlocks = recover({ blockParser.parse(sourceCode.value) }) { null }
+        contentBlocks?.let {
             clearCompileError()
-            updateOutputContent(it)
+            updateContents(it)
         } ?: {
             raiseCompileError()
         }
@@ -102,7 +105,7 @@ class NoteFieldViewModel(
         }
     }
 
-    private fun updateOutputContent(contentBlocks: List<ContentBlock>) {
+    private fun updateContents(contentBlocks: List<ContentBlock>) {
         _uiState.update {
             it.copy(
                 contentBlocks = contentBlocks,

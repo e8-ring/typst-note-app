@@ -1,149 +1,135 @@
 package com.mono9rome.typst_note_app.parser
 
-import com.mono9rome.typst_note_app.model.BulletList
-import com.mono9rome.typst_note_app.model.ContentBlock
-import com.mono9rome.typst_note_app.model.ContentList
-import com.mono9rome.typst_note_app.model.NumberedList
-import com.mono9rome.typst_note_app.model.Paragraph
+import arrow.core.raise.Raise
+import arrow.core.raise.context.ensure
+import arrow.core.toNonEmptyListOrNull
+import com.mono9rome.typst_note_app.model.*
 import me.tatarka.inject.annotations.Inject
 
 @Inject
-class BlockParser(
+class BlockParser(private val textParser: TextParser) {
 
-) {
-    // グループ1: インデント, グループ2: マーカー, グループ3: テキスト（任意）
-    private val bulletRegex = Regex("^(\\s*)([-*+])(?:\\s+(.*))?$")
-    private val numberedRegex = Regex("^(\\s*)(\\d+\\.)(?:\\s+(.*))?$")
+    context(_: Raise<Err>)
+    suspend fun parse(source: String): List<ContentBlock> {
+        val lines = source.lines().toNonEmptyListOrNull() ?: return emptyList()
+        val state = BlockParserState.new(lines)
+        return with(state) {
+            parseBlocks(0)
+        }
+    }
 
     // 指定されたインデント (minIndent) 以上のブロック群をパースする
-    // ※ pos は現在処理中の何行目を処理しているかを参照渡しで保持するための配列で、
-    // 0 番目の要素しか用いない。Int が immutable なため。
-    fun parseBlocks(
-        lines: List<String>,
-        pos: IntArray,
-        minIndent: Int
+    // 注意 : インデントが深くなるのは新しいリストに入ったときしかない。
+    context(state: BlockParserState, _: Raise<Err>)
+    private suspend fun parseBlocks(
+        currentIndent: Int
     ): List<ContentBlock> {
         val blocks = mutableListOf<ContentBlock>()
 
-        while (pos[0] < lines.size) {
-            val line = lines[pos[0]]
+        // 空でない行が出てくるまで飛ばす（主に最初の段階を想定）
+        state.skipBlankLines()
+
+        while (state.isNotExceededTheLastLine()) {
+            // ループの各回の開始時点での現在の行を取得する
+            val line = state.currentLine
+
+            // この行が空行なら次の行に進む
             if (line.isBlank()) {
-                pos[0]++
+                println("line is blank!")
+                state.moveToNextLine()
                 continue
             }
 
-            val indent = countIndent(line)
-            if (indent < minIndent) break // インデントが浅くなったらスコープ外なので終了
+            // インデントが浅くなったらこの行はスコープ外なので終了
+            if (line.countIndent() < currentIndent) break
 
-            val bulletMatch = bulletRegex.find(line)
-            val numberedMatch = numberedRegex.find(line)
+            // ブロックレベルでインデントが深くなることはない
+            // インデントが深くなるのは List の内部のみ
+            ensure(line.countIndent() <= currentIndent) { Err("インデントエラー") }
 
-            // 処理（pos[0] の値はここで増える）
-            if (bulletMatch != null && indent == bulletMatch.groups[1]?.value?.length) {
-                blocks.add(parseList(lines, pos, indent, SourceParser.ListType.BULLET))
-            } else if (numberedMatch != null && indent == numberedMatch.groups[1]?.value?.length) {
-                blocks.add(parseList(lines, pos, indent, SourceParser.ListType.NUMBERED))
-            } else {
-                blocks.add(parseParagraph(lines, pos, minIndent))
+            // 通常時の場合の処理
+            // 注意 : 呼び出し元をみると、ループ 1 回目は制約条件がみたされている。
+            when (line.lineType()) {
+                LineType.BulletListItem -> {
+                    blocks.add(parseList(line.countIndent(), ListType.BULLET))
+                }
+                LineType.NumberedListItem -> {
+                    blocks.add(parseList(line.countIndent(), ListType.NUMBERED))
+                }
+                LineType.ParagraphLine -> {
+                    blocks.addAll(parsePrimitiveBlock(currentIndent))
+                }
             }
         }
 
         return blocks
     }
 
-    private fun parseList(
-        lines: List<String>,
-        pos: IntArray,
-        listIndent: Int,
-        type: SourceParser.ListType
+    // 注意 : 現状、リスト項目間に空行を開けることは許されない。
+    // リスト項目内の空行ならよい。
+    context(state: BlockParserState, _: Raise<Err>)
+    private suspend fun parseList(
+        currentIndent: Int,
+        listType: ListType
     ): ContentList {
         val items = mutableListOf<ContentList.Item>()
 
-        while (pos[0] < lines.size) {
-            // リストアイテム間の空行を読み飛ばして次のアイテムを探す
-            var peekPos = pos[0]
-            while (peekPos < lines.size && lines[peekPos].isBlank()) peekPos++
-            if (peekPos >= lines.size) {
-                pos[0] = peekPos
-                break
-            }
+        while (state.isNotExceededTheLastLine()) {
+            // 処理（ここで行が進む）
+            // 注意 : ループ最初はかならず制約条件をみたすから実行してよい
+            items.add(parseListItem(listType))
 
-            val line = lines[peekPos]
-            val indent = countIndent(line)
-            if (indent < listIndent) break // リスト終了
-
-            val isBullet = bulletRegex.matches(line) && indent == listIndent
-            val isNumbered = numberedRegex.matches(line) && indent == listIndent
-
-            // リストの種類が変わったら別のリストとして扱う
-            if (type == SourceParser.ListType.BULLET && !isBullet) break
-            if (type == SourceParser.ListType.NUMBERED && !isNumbered) break
-
-            pos[0] = peekPos
-            items.add(parseListItem(lines, pos, type))
+            if (state.checkNextLineIsInCurrentListOrEOF(listType, currentIndent)) {
+                state.moveToNextLine()
+            } else break
         }
 
-        return if (type == SourceParser.ListType.BULLET) BulletList(items) else NumberedList(items)
+        return when (listType) {
+            ListType.BULLET -> BulletList(items)
+            ListType.NUMBERED -> NumberedList(items)
+        }
     }
 
-    private fun parseListItem(
-        lines: List<String>,
-        pos: IntArray,
-        type: SourceParser.ListType
-    ): ContentList.Item {
-        val line = lines[pos[0]]
-        val match = if (type == SourceParser.ListType.BULLET) bulletRegex.find(line)!! else numberedRegex.find(line)!!
+    // これは必ずリスト項目の 1 行目（リストマーカーが付いている行）で実行される
+    context(state: BlockParserState, _: Raise<Err>)
+    private suspend fun parseListItem(listType: ListType): ContentList.Item {
+        // 注意 : リストマーカー付きの行からインデントが深くなる
+        val baseIndent = state.currentLine.listItemLineIndent(listType)
 
-        val textGroup = match.groups[3]
-        // マーカーの直後のテキストが始まる位置を、このリスト項目の「基準インデント」とする
-        val contentIndent = if (textGroup != null && textGroup.value.isNotEmpty()) {
-            textGroup.range.first
-        } else {
-            match.groups[1]!!.value.length + match.groups[2]!!.value.length + 1
-        }
+        // 現在の行からリストマーカーを削除
+        state.removeListMarkerFromCurrentLine(baseIndent)
 
-        val firstLineText = textGroup?.value ?: ""
-        pos[0]++
-
-        val blocks = mutableListOf<ContentBlock>()
-
-        // 1. マーカーと同じ行から始まるテキストを最初の段落としてパース
-        if (firstLineText.isNotEmpty()) {
-            val paragraphLines = mutableListOf(firstLineText)
-            while (pos[0] < lines.size) {
-                val nextLine = lines[pos[0]]
-                if (nextLine.isBlank()) break // 空行で段落終了
-
-                val indent = countIndent(nextLine)
-                if (indent < contentIndent) break // インデント不足
-
-                // 次の行が新しいリストの開始なら段落終了
-                if ((bulletRegex.matches(nextLine) && indent == countIndent(nextLine)) ||
-                    (numberedRegex.matches(nextLine) && indent == countIndent(nextLine))) {
-                    break
-                }
-
-                // 基準インデント分だけ先頭のスペースを削る
-                paragraphLines.add(trimIndentFromLine(nextLine, contentIndent))
-                pos[0]++
-            }
-            blocks.add(Paragraph(parseStyle(paragraphLines.joinToString("\n"))))
-        }
-
-        // 2. 空行以降にある、同じリスト項目内の別段落やネストされたリストを再帰的に取得
-        val childBlocks = parseBlocks(lines, pos, contentIndent)
-        blocks.addAll(childBlocks)
-
-        return ContentList.Item(blocks)
+        // この行のインデントを基準にして、再帰的にブロックをパース
+        return ContentList.Item(parseBlocks(baseIndent))
     }
 
-    private fun countIndent(line: String): Int = line.takeWhile { it == ' ' }.length
+    // 注意 : 返り値のリストは ContentBlock.Paragraph と ContentBlock.BlockMath のみからなる
+    context(state: BlockParserState, _: Raise<Err>)
+    private suspend fun parsePrimitiveBlock(
+        currentIndent: Int
+    ): List<ContentBlock> {
+        // 途中結果を保持するバッファ
+        val textLines = mutableListOf<SourceLine>()
 
-    private fun trimIndentFromLine(line: String, indentToRemove: Int): String {
-        return if (line.length >= indentToRemove && line.substring(0, indentToRemove).isBlank()) {
-            line.substring(indentToRemove)
-        } else {
-            line.trimStart()
+        while (state.isNotExceededTheLastLine()) {
+            val line = state.currentLine
+
+            // この行をバッファに追加
+            // 注意 : この関数が呼び出される場合、最初の 1 行目は必ず段落の文章が存在するから、
+            // ループ 1 周目は追加してもよい
+            textLines.add(line.removeIndent(currentIndent))
+
+            // 次の行が同じ段落を構成しているなら、次へ進める。
+            // そうでないなら、ループを抜ける。
+            if (state.checkNextLineIsInCurrentParagraphOrEOF(currentIndent)) {
+                state.moveToNextLine()
+            } else break
         }
+
+        // 改行でつないで1 つの文字列に
+        val paragraphAsString = textLines.joinToString("\n", transform = SourceLine::value)
+
+//        return textParser.parse(paragraphAsString)
+        return listOf(Paragraph(listOf(PlainNode(listOf(PlainText(paragraphAsString))))))
     }
 }

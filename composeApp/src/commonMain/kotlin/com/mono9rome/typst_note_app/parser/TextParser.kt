@@ -1,83 +1,117 @@
 package com.mono9rome.typst_note_app.parser
 
-import com.mono9rome.typst_note_app.model.InlineTextFragment
-import com.mono9rome.typst_note_app.model.TextBlock
+import arrow.core.raise.Raise
+import com.mono9rome.typst_note_app.FontSizeProvider
+import com.mono9rome.typst_note_app.model.*
+import com.mono9rome.typst_note_app.render.MathRenderer
+import me.tatarka.inject.annotations.Inject
 
-fun parseToTextBlocks(markdown: String): List<TextBlock> {
-    // 正規表現パターン
-    // Group 1: "$ " と " $" で囲まれたブロック数式
-    // Group 2: "$" と "$" で囲まれたインライン数式
-    // ※ 順番が重要。ブロック数式を先に評価させる。
-    // ※ 「直前に \ がないこと」を意味する否定あと読み (?<!\\) をつけることでエスケープ処理に対応
-    val regex = Regex("""(?<!\\)\$ (.*?) (?<!\\)\$|(?<!\\)\$(.*?)(?<!\\)\$""")
+@Inject
+class TextParser(
+    private val mathParser: MathParser,
+    private val mathRenderer: MathRenderer,
+    private val fontSizeProvider: FontSizeProvider
+) {
 
-    // すべてのマッチ箇所
-    val matchResults = regex.findAll(markdown)
+    context(_: Raise<Err>)
+    suspend fun parse(text: String): List<ContentBlock> = parsePrimitiveBlock(text)
 
-    /* --- imperative --- */
-    val textBlocks = mutableListOf<TextBlock>()
-    val currentInlineText = mutableListOf<InlineTextFragment>()
-
-    var lastIndex = 0 // 現在読み取っている文字列の位置
-
-    for (match in matchResults) {
-        // 1. マッチした箇所の「手前」までの文字列を取り出し、Plane（通常の文字列）として扱う
-        val textBeforeMatch = markdown.substring(lastIndex, match.range.first).trimReturn()
-        if (textBeforeMatch.isNotEmpty()) {
-            // $ 前のエスケープ文字 (\) を取り除く
-            val unescapedText = textBeforeMatch.replace("\\$", "$")
-            currentInlineText.add(
-                InlineTextFragment.Plane(unescapedText)
-            )
-        }
-
-        // 2. Group 1, 2 のどちらのパターンにマッチしたか判定
-        val blockMathContent = match.groups[1]?.value
-        val inlineMathContent = match.groups[2]?.value
-
-        if (blockMathContent != null) {
-            // --- ブロック数式にマッチした場合 ---
-
-            // これまでに溜まっていたインライン要素があれば、1つの TextBlock.Inline として確定させる
-            if (currentInlineText.isNotEmpty()) {
-                textBlocks.add(
-                    TextBlock.Inline(currentInlineText.toList())
-                )
-                currentInlineText.clear()
+    context(_: Raise<Err>)
+    private suspend fun parsePrimitiveBlock(text: String): List<ContentBlock> =
+        mathParser.parse(text, MathParser.MathType.Block)
+            .map { repr ->
+                when (repr) {
+                    is MathParser.Repr.Plain -> parseStyle(repr.source)
+                    is MathParser.Repr.Math -> {
+                        val currentFontSize = fontSizeProvider.current
+                        BlockMath(mathRenderer.toPng(repr.source, currentFontSize))
+                    }
+                }
             }
-            // ブロック数式を追加
-            textBlocks.add(
-                TextBlock.Math("$ $blockMathContent $")
-            )
 
-        } else if (inlineMathContent != null) {
-            // --- インライン数式にマッチした場合 ---
-            currentInlineText.add(
-                InlineTextFragment.Math("$$inlineMathContent$")
-            )
+    // 注意 : [text] にブロック数式は含まれない。
+    context(_: Raise<Err>)
+    private suspend fun parseStyle(text: String): Paragraph {
+        val elements = mutableListOf<StyleElement>()
+
+        // $ の中かどうかの状態変数
+        var insideDollar = false
+        // * の中かどうかの状態変数
+        var insideAsterisk = false
+
+        // * 外の文字をためておくバッファ
+        val currentPlainExtracted = java.lang.StringBuilder()
+        // 抽出中の * 内の文字をためておくバッファ
+        val currentBoldExtracted = java.lang.StringBuilder()
+
+        for (c in text) {
+            when (c) {
+                '$' -> {
+                    // 中 / 外の状態を反転してから……
+                    insideDollar = !insideDollar
+
+                    if (insideAsterisk) {
+                        // * で囲まれた内部のとき
+                        currentBoldExtracted.append(c)
+                    } else {
+                        // * の外のとき
+                        currentPlainExtracted.append(c)
+                    }
+                }
+                '*' -> {
+                    if (insideDollar) {
+                        // $ の中にある * は無視。
+                        // 以下は *文章 $数式 * 数式$ 文章* のような場合への対処。
+                        if (insideAsterisk) {
+                            currentBoldExtracted.append(c)
+                        }
+                    } else {
+                        // $ の外にある * は有効。
+                        if (insideAsterisk) {
+                            // 既に * 中だったら抽出終了
+                            elements.add(
+                                BoldNode(parseInlineElements(currentBoldExtracted.toString()))
+                            )
+                            // バッファをリセット
+                            currentBoldExtracted.clear()
+                            // 外に出る
+                            insideAsterisk = false
+                        } else {
+                            // * の外にいた状態から * が始まるとき、プレーンテキスト抽出終了
+                            elements.add(
+                                PlainNode(parseInlineElements(currentPlainExtracted.toString()))
+                            )
+                            // バッファをリセット
+                            currentPlainExtracted.clear()
+                            // 新しく中に入る
+                            insideAsterisk = true
+                        }
+                    }
+                }
+                else -> {
+                    // その他の文字の場合
+                    if (insideAsterisk) {
+                        currentBoldExtracted.append(c)
+                    } else {
+                        currentPlainExtracted.append(c)
+                    }
+                }
+            }
         }
 
-        // 3. 次の検索開始位置を更新
-        lastIndex = match.range.last + 1
+        return Paragraph(elements)
     }
 
-    // 最後のマッチ以降に残っている文字列を Plane として追加
-    val remainingText = markdown.substring(lastIndex).trimReturn()
-    if (remainingText.isNotEmpty()) {
-        val unescapedRemainingText = remainingText.replace("\\$", "$")
-        currentInlineText.add(
-            InlineTextFragment.Plane(unescapedRemainingText)
-        )
-    }
-
-    // 残っているインライン要素があれば、最後の TextBlock.Inline として確定させる
-    if (currentInlineText.isNotEmpty()) {
-        textBlocks.add(
-            TextBlock.Inline(currentInlineText.toList())
-        )
-    }
-
-    return textBlocks
+    context(_: Raise<Err>)
+    private suspend fun parseInlineElements(text: String): List<InlineElement> =
+        mathParser.parse(text, MathParser.MathType.Inline)
+            .map { representation ->
+                when (representation) {
+                    is MathParser.Repr.Plain -> PlainText(representation.source)
+                    is MathParser.Repr.Math -> {
+                        val currentFontSize = fontSizeProvider.current
+                        InlineMath(content = mathRenderer.toPng(representation.source, currentFontSize))
+                    }
+                }
+            }
 }
-
-private fun String.trimReturn(): String = this.trim { it == '\n' || it == '\r' }

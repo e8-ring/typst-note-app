@@ -8,6 +8,7 @@ import androidx.compose.foundation.text.InlineTextContent
 import androidx.compose.foundation.text.appendInlineContent
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.toComposeImageBitmap
@@ -26,7 +27,7 @@ import com.mono9rome.typst_note_app.model.InlineElement
 import com.mono9rome.typst_note_app.model.InlineMath
 import com.mono9rome.typst_note_app.model.Paragraph
 import com.mono9rome.typst_note_app.model.PlainText
-import com.mono9rome.typst_note_app.model.RomanNode
+import com.mono9rome.typst_note_app.model.PlainNode
 import com.mono9rome.typst_note_app.model.UniqueId
 import org.jetbrains.skia.Image.Companion.makeFromEncoded
 
@@ -39,37 +40,44 @@ fun ParagraphRenderer(
     Column(
         modifier = modifier.fillMaxSize(),
     ) {
-        // スタイルをつける
-        val annotatedString = buildAnnotatedString {
-            paragraph.content.forEach { line ->
-                val originalAnnotatedString = line.content.toTemplate(fontSizeSp).annotatedString
-                when (line) {
-                    is RomanNode -> {
-                        append(originalAnnotatedString)
-                    }
-                    is BoldNode -> {
-                        withStyle(
-                            style = SpanStyle(fontWeight = FontWeight.Bold)
-                        ) {
-                            append(originalAnnotatedString)
+        if (!paragraph.content.isEmpty()) {
+            // スタイルをつける
+            val annotatedString = remember(paragraph) {
+                buildAnnotatedString {
+                    paragraph.content.forEach { line ->
+                        val originalAnnotatedString = line.content.toTemplate(fontSizeSp).annotatedString
+                        when (line) {
+                            is PlainNode -> {
+                                append(originalAnnotatedString)
+                            }
+
+                            is BoldNode -> {
+                                withStyle(
+                                    style = SpanStyle(fontWeight = FontWeight.Bold)
+                                ) {
+                                    append(originalAnnotatedString)
+                                }
+                            }
                         }
                     }
                 }
             }
-        }
 
-        // 子要素の inlineContentMap をすべて結合
-        val inlineContentMap = paragraph.content
-            .map { element ->
-                element.content.toTemplate(fontSizeSp).inlineContentMap.mapKeys { (key, _) -> key.value }
+            // 子要素の inlineContentMap をすべて結合
+            val inlineContentMap = remember(paragraph) {
+                paragraph.content
+                    .map { element ->
+                        element.content.toTemplate(fontSizeSp).inlineContentMap.mapKeys { (key, _) -> key.value }
+                    }
+                    .reduce { acc, map -> acc + map }
             }
-            .reduce { acc, map -> acc + map }
 
-        Text(
-            text = annotatedString,
-            fontSize = fontSizeSp.sp,
-            inlineContent = inlineContentMap
-        )
+            Text(
+                text = annotatedString,
+                fontSize = fontSizeSp.sp,
+                inlineContent = inlineContentMap
+            )
+        }
     }
 }
 
@@ -88,7 +96,7 @@ private fun List<InlineElement>.toTemplate(fontSizeSp: Float): InlineElementTemp
                 is InlineMath -> {
                     appendInlineContent(
                         id = element.id.value,
-                        alternateText = element.source
+                        alternateText = element.id.value // TODO 考える
                     )
                 }
             }
@@ -98,7 +106,7 @@ private fun List<InlineElement>.toTemplate(fontSizeSp: Float): InlineElementTemp
     // インライン数式の id と表示用 Composable のペア
     val inlineContentMap = this.filterIsInstance<InlineMath>()
         .associate { element ->
-            val bitmap = makeFromEncoded(element.content).toComposeImageBitmap()
+            val bitmap = makeFromEncoded(element.content.content).toComposeImageBitmap()
 
             // px を em に変換
             // 注意 : 1 em は現在指定されている fontSize (sp) のサイズと等しい。
