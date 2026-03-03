@@ -35,6 +35,7 @@ kotlin {
             implementation(libs.compose.runtime)
             implementation(libs.compose.foundation)
             implementation(libs.compose.material3)
+            implementation("org.jetbrains.compose.material:material-icons-extended:1.7.3")
             implementation(libs.compose.ui)
             implementation(libs.compose.components.resources)
             implementation(libs.compose.uiToolingPreview)
@@ -45,6 +46,8 @@ kotlin {
             implementation("io.arrow-kt:arrow-core:2.2.1.1")
             // DI
             implementation(libs.kotlin.inject.runtime)
+            // Okio
+            implementation("com.squareup.okio:okio:3.16.2")
             // SVG
             implementation("io.coil-kt.coil3:coil-compose:3.4.0")
             implementation("io.coil-kt.coil3:coil-svg:3.4.0")

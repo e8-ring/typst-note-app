@@ -14,7 +14,8 @@ class MathParser {
 
     enum class MathType { Inline, Block }
 
-    fun parse(text:String, mathType: MathType): List<Repr> {
+    fun parse(text: String, mathType: MathType): List<Repr> {
+        println("mathParser!: $text")
         val reprs = mutableListOf<Repr>()
 
         // ※ 「直前に \ がないこと」を意味する否定あと読み (?<!\\) をつけることでエスケープ処理に対応
@@ -39,7 +40,13 @@ class MathParser {
             val mathContent = match.groups[1]?.value
             if (mathContent != null) {
                 // 数式を追加
-                reprs.add(Repr.Math("$ $mathContent $"))
+                val repr = Repr.Math(
+                    source = when (mathType) {
+                        MathType.Inline -> "$$mathContent$"
+                        MathType.Block -> "$ $mathContent $"
+                    }
+                )
+                reprs.add(repr)
             }
 
             // 3. 次の検索開始位置を更新

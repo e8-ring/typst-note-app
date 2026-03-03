@@ -1,9 +1,12 @@
-package com.mono9rome.typst_note_app.ui
+package com.mono9rome.typst_note_app.ui.renderer
 
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import com.mono9rome.typst_note_app.model.BlockMath
 import com.mono9rome.typst_note_app.model.ContentBlock
 import com.mono9rome.typst_note_app.model.ContentList
@@ -16,7 +19,7 @@ fun ContentRenderer(
     modifier: Modifier = Modifier,
 ) {
     Column(
-        modifier = modifier.fillMaxSize(),
+        modifier = modifier.fillMaxWidth()
     ) {
         contentBlocks.forEach { contentBlock ->
             when (contentBlock) {
@@ -34,10 +37,11 @@ fun ContentRenderer(
                 is ContentList -> {
                     ListRenderer(
                         contentList = contentBlock,
-                        textSizeSp = textSizeSp
+                        fontSizeSp = textSizeSp
                     )
                 }
             }
+            Spacer(Modifier.height((textSizeSp * 0.5).dp))
         }
     }
 }

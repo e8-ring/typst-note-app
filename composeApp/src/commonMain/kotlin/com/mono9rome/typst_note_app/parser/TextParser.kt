@@ -32,6 +32,7 @@ class TextParser(
     // 注意 : [text] にブロック数式は含まれない。
     context(_: Raise<Err>)
     private suspend fun parseStyle(text: String): Paragraph {
+        println("parseStyle!: $text")
         val elements = mutableListOf<StyleElement>()
 
         // $ の中かどうかの状態変数
@@ -60,10 +61,12 @@ class TextParser(
                 }
                 '*' -> {
                     if (insideDollar) {
-                        // $ の中にある * は無視。
-                        // 以下は *文章 $数式 * 数式$ 文章* のような場合への対処。
+                        // $ の中にある * は太字に関与しない。
+                        // しかし数式には関与するから、以下はそのため
                         if (insideAsterisk) {
                             currentBoldExtracted.append(c)
+                        } else {
+                            currentPlainExtracted.append(c)
                         }
                     } else {
                         // $ の外にある * は有効。
@@ -99,6 +102,13 @@ class TextParser(
             }
         }
 
+        // ループ終了後にプレーンテキストのバッファが残っていたら確定する
+        if (currentPlainExtracted.isNotEmpty()) {
+            elements.add(
+                PlainNode(parseInlineElements(currentPlainExtracted.toString()))
+            )
+        }
+
         return Paragraph(elements)
     }
 
@@ -106,6 +116,7 @@ class TextParser(
     private suspend fun parseInlineElements(text: String): List<InlineElement> =
         mathParser.parse(text, MathParser.MathType.Inline)
             .map { representation ->
+                println("parseInlineElements!: $representation")
                 when (representation) {
                     is MathParser.Repr.Plain -> PlainText(representation.source)
                     is MathParser.Repr.Math -> {

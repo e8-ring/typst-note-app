@@ -1,8 +1,9 @@
-package com.mono9rome.typst_note_app
+package com.mono9rome.typst_note_app.ui
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import arrow.core.raise.recover
+import com.mono9rome.typst_note_app.data.LocalFileManager
 import com.mono9rome.typst_note_app.model.ContentBlock
 import com.mono9rome.typst_note_app.parser.BlockParser
 import kotlinx.coroutines.flow.*
@@ -14,6 +15,7 @@ data class SourceCode(val value: String)
 @Inject
 class NoteFieldViewModel(
     private val blockParser: BlockParser,
+    private val fileManager: LocalFileManager
 ) : ViewModel() {
 
     data class UiState(
@@ -49,6 +51,7 @@ class NoteFieldViewModel(
                 sourceCode = sourceCode,
                 textSizeSp = _uiState.value.textSizeSp,
             )
+            fileManager.writeText("typstnoteapp1111.txt", sourceCode.value)
         }
     }
 

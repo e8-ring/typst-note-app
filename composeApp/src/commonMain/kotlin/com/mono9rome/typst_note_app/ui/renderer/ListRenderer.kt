@@ -1,25 +1,28 @@
-package com.mono9rome.typst_note_app.ui
+package com.mono9rome.typst_note_app.ui.renderer
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.sp
 import com.mono9rome.typst_note_app.model.BulletList
 import com.mono9rome.typst_note_app.model.ContentList
 import com.mono9rome.typst_note_app.model.NumberedList
+import com.mono9rome.typst_note_app.ui.preview.PreviewConfig
+import com.mono9rome.typst_note_app.ui.preview.SampleData
 
 @Composable
 fun ListRenderer(
     contentList: ContentList,
-    textSizeSp: Float,
+    fontSizeSp: Float,
     modifier: Modifier = Modifier
 ) {
     Column(
-        modifier = modifier.fillMaxSize(),
+        modifier = modifier.fillMaxWidth()
     ) {
         contentList.items.forEachIndexed { index, item ->
             Row(
@@ -31,8 +34,9 @@ fun ListRenderer(
                             modifier = Modifier
                         ) {
                             Text(
-                                text = "■",
-                                fontSize = textSizeSp.sp
+                                text = "・ ",
+                                fontSize = (fontSizeSp * 0.8f).sp,
+                                lineHeight = (fontSizeSp * 1.5).sp,
                             )
                         }
                     }
@@ -41,17 +45,32 @@ fun ListRenderer(
                             modifier = Modifier
                         ) {
                             Text(
-                                text = "$index.",
-                                fontSize = textSizeSp.sp
+                                text = "${index + 1}. ",
+                                fontSize = fontSizeSp.sp,
+                                lineHeight = (fontSizeSp * 1.5).sp,
                             )
                         }
                     }
                 }
                 ContentRenderer(
                     contentBlocks = item.blocks,
-                    textSizeSp = textSizeSp
+                    textSizeSp = fontSizeSp,
+                    modifier = Modifier.weight(1f)
                 )
             }
         }
     }
+}
+
+@Preview(
+    widthDp = 700,
+    heightDp = PreviewConfig.HEIGHT_DP_HD,
+    showBackground = true
+)
+@Composable
+fun BlockMathRendererPreview() {
+    ListRenderer(
+        contentList = (SampleData.contentBlocks[1] as ContentList),
+        fontSizeSp = SampleData.textSizeSp
+    )
 }

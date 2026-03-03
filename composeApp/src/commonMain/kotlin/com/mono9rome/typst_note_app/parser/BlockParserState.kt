@@ -2,7 +2,7 @@ package com.mono9rome.typst_note_app.parser
 
 import arrow.core.NonEmptyList
 
-class BlockParserState(private val lines: MutableList<SourceLine>) {
+class BlockParserState(val lines: MutableList<SourceLine>) {
 
     // 今処理しているのが何行目かを管理する状態変数
     private var currentLineIndex: Int = 0
@@ -53,7 +53,8 @@ class BlockParserState(private val lines: MutableList<SourceLine>) {
 
     // 状態更新
     fun moveToNextLine() {
-        currentLineIndex += 1
+        currentLineIndex++
+        println("currentLineIndex: $currentLineIndex")
     }
 
     // 状態更新
@@ -71,10 +72,5 @@ class BlockParserState(private val lines: MutableList<SourceLine>) {
     // 状態更新
     fun removeListMarkerFromCurrentLine(currentIndentDepth: Int) {
         lines[currentLineIndex] = lines[currentLineIndex].removeIndent(currentIndentDepth)
-    }
-
-    companion object {
-        fun new(lines: NonEmptyList<String>): BlockParserState =
-            BlockParserState(lines.map(::SourceLine).toMutableList())
     }
 }

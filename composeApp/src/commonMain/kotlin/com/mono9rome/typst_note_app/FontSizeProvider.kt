@@ -8,5 +8,5 @@ class FontSizeProvider {
      * sp 単位でのフォントサイズ
      * */
     val current: Float
-        get() = 15f
+        get() = 18f
 }

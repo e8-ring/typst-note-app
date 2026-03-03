@@ -1,4 +1,4 @@
-package com.mono9rome.typst_note_app
+package com.mono9rome.typst_note_app.ui
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.border
@@ -13,8 +13,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.mono9rome.typst_note_app.LocalAppComponent
 import com.mono9rome.typst_note_app.model.ContentBlock
-import com.mono9rome.typst_note_app.ui.ContentRenderer
+import com.mono9rome.typst_note_app.ui.renderer.ContentRenderer
 
 @Composable
 fun NoteField(
@@ -44,7 +45,7 @@ fun NoteFieldBody(
     modifier: Modifier = Modifier
 ) {
     Row(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxSize(),
         verticalAlignment = Alignment.Top
     ) {
         SourceEditor(
