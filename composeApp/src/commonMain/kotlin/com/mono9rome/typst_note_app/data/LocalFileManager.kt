@@ -10,6 +10,9 @@ class AppStorageDir(val path: String)
 @Inject
 class LocalFileManager(private val storageDir: AppStorageDir) {
 
+    fun getAll(): List<String>? =
+        FileSystem.SYSTEM.listOrNull(storageDir.path.toPath())?.map { it.name }
+
     fun writeText(fileName: String, content: String) {
         val path = "${storageDir.path}/$fileName".toPath()
 

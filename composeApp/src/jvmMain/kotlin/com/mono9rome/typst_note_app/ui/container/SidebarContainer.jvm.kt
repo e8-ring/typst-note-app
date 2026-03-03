@@ -1,4 +1,4 @@
-package com.mono9rome.typst_note_app.ui
+package com.mono9rome.typst_note_app.ui.container
 
 import androidx.compose.ui.input.pointer.PointerIcon
 import java.awt.Cursor

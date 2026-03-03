@@ -120,8 +120,7 @@ compose.desktop {
 val buildRustDesktop by tasks.registering(Exec::class) {
     group = "rust"
     workingDir = file("../rust_core")
-    commandLine("cargo", "build")
-
+    commandLine(System.getenv("HOME") + "/.cargo/bin/cargo", "build")
 }
 
 val generateUniFFIBindings by tasks.registering(Exec::class) {
@@ -138,7 +137,7 @@ val generateUniFFIBindings by tasks.registering(Exec::class) {
     }
 
     commandLine(
-        "cargo",
+        System.getenv("HOME") + "/.cargo/bin/cargo",
         "run",
         "--features=uniffi/cli",
         "--bin",

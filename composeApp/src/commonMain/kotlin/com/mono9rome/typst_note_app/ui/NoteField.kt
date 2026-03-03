@@ -2,19 +2,22 @@ package com.mono9rome.typst_note_app.ui
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.mono9rome.typst_note_app.LocalAppComponent
 import com.mono9rome.typst_note_app.model.ContentBlock
+import com.mono9rome.typst_note_app.ui.container.ResizerContainer
 import com.mono9rome.typst_note_app.ui.renderer.ContentRenderer
 
 @Composable
@@ -44,23 +47,26 @@ fun NoteFieldBody(
     contentBlocks: List<ContentBlock>,
     modifier: Modifier = Modifier
 ) {
-    Row(
-        modifier = modifier.fillMaxSize(),
-        verticalAlignment = Alignment.Top
-    ) {
-        SourceEditor(
-            sourceCode = sourceCode,
-            textSizeSp = textSizeSp,
-            onEdited = onEdited,
-            textSizeChanger = textSizeChanger,
-            modifier = Modifier.weight(0.5f)
-        )
-        OutputViewer(
-            textSizeSp = textSizeSp,
-            contentBlocks = contentBlocks,
-            modifier = Modifier.weight(0.5f)
-        )
-    }
+    ResizerContainer(
+        leftContentDefaultWidth = 500, // TODO : ちゃんと決める
+        leftContentMinWidth = 100,
+        leftContentMaxWidth = 700,
+        modifier = modifier,
+        leftContent = {
+            SourceEditor(
+                sourceCode = sourceCode,
+                textSizeSp = textSizeSp,
+                onEdited = onEdited,
+                textSizeChanger = textSizeChanger,
+            )
+        },
+        rightContent = {
+            OutputViewer(
+                textSizeSp = textSizeSp,
+                contentBlocks = contentBlocks,
+            )
+        }
+    )
 }
 
 @Composable
@@ -90,13 +96,12 @@ fun SourceEditor(
                 textSizeChanger(it.toFloatOrNull())
             },
             label = {
-                Text("Math Font Size")
+                Text("Font Size")
             }
         )
     }
 }
 
-// 注意 : 現在は sourceCode はフルに数式だとしている
 @Composable
 fun OutputViewer(
     textSizeSp: Float,

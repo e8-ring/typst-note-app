@@ -8,8 +8,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import com.mono9rome.typst_note_app.ui.NoteChooser
 import com.mono9rome.typst_note_app.ui.NoteField
-import com.mono9rome.typst_note_app.ui.SidebarContainer
+import com.mono9rome.typst_note_app.ui.container.SidebarContainer
 
 @Composable
 fun AppBody(
@@ -22,7 +23,11 @@ fun AppBody(
             .fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        SidebarContainer {
+        SidebarContainer(
+            sidebarContent = {
+                NoteChooser()
+            }
+        ) {
             NoteField()
         }
     }
