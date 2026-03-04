@@ -15,7 +15,7 @@ class MathParser {
     enum class MathType { Inline, Block }
 
     fun parse(text: String, mathType: MathType): List<Repr> {
-        println("mathParser!: $text")
+        println("mathParser!($mathType): $text")
         val reprs = mutableListOf<Repr>()
 
         // ※ 「直前に \ がないこと」を意味する否定あと読み (?<!\\) をつけることでエスケープ処理に対応

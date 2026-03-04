@@ -1,4 +1,4 @@
-package com.mono9rome.typst_note_app.ui.renderer
+package com.mono9rome.typst_note_app.ui.viewer.renderer
 
 import androidx.compose.foundation.text.InlineTextContent
 import androidx.compose.ui.text.AnnotatedString

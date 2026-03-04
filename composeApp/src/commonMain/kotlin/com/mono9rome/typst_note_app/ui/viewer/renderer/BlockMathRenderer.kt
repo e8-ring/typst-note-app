@@ -1,4 +1,4 @@
-package com.mono9rome.typst_note_app.ui.renderer
+package com.mono9rome.typst_note_app.ui.viewer.renderer
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier

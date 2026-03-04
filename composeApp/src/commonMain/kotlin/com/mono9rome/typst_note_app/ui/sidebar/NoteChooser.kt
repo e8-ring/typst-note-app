@@ -1,6 +1,7 @@
-package com.mono9rome.typst_note_app.ui
+package com.mono9rome.typst_note_app.ui.sidebar
 
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -17,7 +18,7 @@ fun NoteChooser(
     }
     NoteChooserBody(
         notes = viewModel.list.collectAsState().value,
-        modifier = modifier,
+        modifier = modifier.fillMaxSize(),
     )
 }
 

@@ -9,7 +9,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
-import com.mono9rome.typst_note_app.ui.NoteFieldBody
 import com.mono9rome.typst_note_app.ui.NoteFieldViewModel
 
 private val noteFieldUiState = NoteFieldViewModel.UiState(
@@ -33,13 +32,13 @@ fun AppBodyPreview() {
             .fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        NoteFieldBody(
-            sourceCode = noteFieldUiState.sourceCode,
-            textSizeSp = noteFieldUiState.textSizeSp,
-            onEdited = {},
-            textSizeChanger = {},
-            contentBlocks = noteFieldUiState.contentBlocks,
-            modifier = Modifier.fillMaxSize()
-        )
+//        NoteFieldBody(
+//            sourceCode = noteFieldUiState.sourceCode,
+//            textSizeSp = noteFieldUiState.textSizeSp,
+//            onEdited = {},
+//            textSizeChanger = {},
+//            contentBlocks = noteFieldUiState.contentBlocks,
+//            modifier = Modifier.fillMaxSize()
+//        )
     }
 }

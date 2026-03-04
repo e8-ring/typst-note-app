@@ -1,4 +1,4 @@
-package com.mono9rome.typst_note_app.ui.renderer
+package com.mono9rome.typst_note_app.ui.viewer.renderer
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
@@ -16,6 +16,7 @@ import androidx.compose.ui.unit.em
 import com.mono9rome.typst_note_app.model.InlineElement
 import com.mono9rome.typst_note_app.model.InlineMath
 import com.mono9rome.typst_note_app.model.PlainText
+import com.mono9rome.typst_note_app.ui.viewer.renderer.InlineElementTemplate
 import org.jetbrains.skia.Image.Companion.makeFromEncoded
 
 actual fun List<InlineElement>.toTemplate(fontSizeSp: Float): InlineElementTemplate {

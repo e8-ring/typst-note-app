@@ -1,4 +1,4 @@
-package com.mono9rome.typst_note_app.ui
+package com.mono9rome.typst_note_app.ui.sidebar
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
