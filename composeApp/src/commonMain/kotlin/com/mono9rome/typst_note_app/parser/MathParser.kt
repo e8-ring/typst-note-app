@@ -19,9 +19,11 @@ class MathParser {
         val reprs = mutableListOf<Repr>()
 
         // ※ 「直前に \ がないこと」を意味する否定あと読み (?<!\\) をつけることでエスケープ処理に対応
+        // ※ ブロック数式の場合の先頭の ^ に注意！現状、これをつけないと「$inline$ hoge $inline$」という状況で
+        // 中央の $ hoge $ が検知されてしまう。
         val regex = when (mathType) {
             MathType.Inline -> Regex("""(?<!\\)\$(.*?)(?<!\\)\$""")
-            MathType.Block -> Regex("""(?<!\\)\$ (.*?) (?<!\\)\$""")
+            MathType.Block -> Regex("""^(?<!\\)\$ (.*?) (?<!\\)\$""")
         }
         val matchResults = regex.findAll(text)
 

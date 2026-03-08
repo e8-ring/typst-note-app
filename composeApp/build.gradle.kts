@@ -120,7 +120,13 @@ compose.desktop {
 val buildRustDesktop by tasks.registering(Exec::class) {
     group = "rust"
     workingDir = file("../rust_core")
-    commandLine(System.getenv("HOME") + "/.cargo/bin/cargo", "build")
+    val os = org.gradle.internal.os.OperatingSystem.current()
+    val cargo = when {
+        os.isWindows -> "cargo"
+        os.isMacOsX -> System.getenv("HOME") + "/.cargo/bin/cargo"
+        else -> "cargo"
+    }
+    commandLine(cargo, "build")
 }
 
 val generateUniFFIBindings by tasks.registering(Exec::class) {
@@ -135,9 +141,13 @@ val generateUniFFIBindings by tasks.registering(Exec::class) {
         os.isMacOsX -> "librust_core.dylib"
         else -> "librust_core.so"
     }
-
+    val cargo = when {
+        os.isWindows -> "cargo"
+        os.isMacOsX -> System.getenv("HOME") + "/.cargo/bin/cargo"
+        else -> "cargo"
+    }
     commandLine(
-        System.getenv("HOME") + "/.cargo/bin/cargo",
+        cargo,
         "run",
         "--features=uniffi/cli",
         "--bin",

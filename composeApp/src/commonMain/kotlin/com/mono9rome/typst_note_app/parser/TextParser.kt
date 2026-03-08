@@ -118,11 +118,13 @@ class TextParser(
             .map { representation ->
                 println("parseInlineElements!: $representation")
                 when (representation) {
-                    is MathParser.Repr.Plain -> PlainText(representation.source)
+                    is MathParser.Repr.Plain -> PlainText(representation.source.removeAllReturns())
                     is MathParser.Repr.Math -> {
                         val currentFontSize = fontSizeProvider.current
                         InlineMath(content = mathRenderer.toPng(representation.source, currentFontSize))
                     }
                 }
             }
+
+    private fun String.removeAllReturns(): String = this.replace('\n', ' ')
 }

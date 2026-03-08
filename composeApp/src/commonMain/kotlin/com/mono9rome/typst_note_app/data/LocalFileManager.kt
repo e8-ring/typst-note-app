@@ -1,5 +1,11 @@
 package com.mono9rome.typst_note_app.data
 
+import arrow.core.raise.Raise
+import arrow.core.raise.context.ensure
+import arrow.core.raise.context.raise
+import com.mono9rome.typst_note_app.model.Err
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import me.tatarka.inject.annotations.Inject
 import okio.Path.Companion.toPath
 import okio.FileSystem
@@ -21,11 +27,14 @@ class LocalFileManager(private val storageDir: AppStorageDir) {
         }
     }
 
-    fun readText(fileName: String): String? {
+    context(_: Raise<Err>)
+    suspend fun readText(fileName: String): String = withContext(Dispatchers.IO) {
         val path = "${storageDir.path}/$fileName".toPath()
 
-        if (!FileSystem.SYSTEM.exists(path)) return null
+        ensure(FileSystem.SYSTEM.exists(path)) {
+            raise(Err("Not Found: $fileName"))
+        }
 
-        return FileSystem.SYSTEM.source(path).buffer().use { source -> source.readUtf8() }
+        return@withContext FileSystem.SYSTEM.source(path).buffer().use { source -> source.readUtf8() }
     }
 }

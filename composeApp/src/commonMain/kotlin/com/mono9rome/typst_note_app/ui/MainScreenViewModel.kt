@@ -4,7 +4,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import arrow.core.raise.recover
 import com.mono9rome.typst_note_app.data.LocalFileManager
+import com.mono9rome.typst_note_app.data.NoteRepository
 import com.mono9rome.typst_note_app.model.ContentBlock
+import com.mono9rome.typst_note_app.model.Note
 import com.mono9rome.typst_note_app.parser.BlockParser
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -16,22 +18,33 @@ import me.tatarka.inject.annotations.Inject
 @Inject
 class MainScreenViewModel(
     private val blockParser: BlockParser,
-    private val fileManager: LocalFileManager
+    private val fileManager: LocalFileManager,
+    private val noteRepository: NoteRepository,
 ) : ViewModel() {
 
+    data class EditorState(
+        val openNoteIds: List<Note.Id>,
+        val currentNote: Note?
+    ) {
+        companion object {
+            val default = EditorState(
+                openNoteIds = listOf(),
+                currentNote = null
+            )
+        }
+    }
+
     data class UiState(
-        val sourceCode: SourceCode,
+        val editorState: EditorState,
         val fontSizeSp: Float,
-        val contentBlocks: List<ContentBlock>,
+        val currentRenderedContent: List<ContentBlock>,
         val isCompileError: Boolean,
     ) {
         companion object {
             val default = UiState(
-                sourceCode = SourceCode(
-                    value = "",
-                ),
+                editorState = EditorState.default,
                 fontSizeSp = 14f,
-                contentBlocks = listOf(),
+                currentRenderedContent = listOf(),
                 isCompileError = false
             )
         }
@@ -46,24 +59,118 @@ class MainScreenViewModel(
 //        }
     }
 
+    /* --- public methods --- */
+
+    fun onSelectFileInChooser(noteId: Note.Id) {
+        viewModelScope.launch {
+            addNoteToTab(noteId)
+            val selectedNote = recover({ noteRepository.get(noteId) }) { e ->
+                // 諦める
+                println("Error: ${e.message}")
+                return@launch
+            }
+            updateCurrentNoteThenRender(selectedNote)
+        }
+    }
+
+    fun onSelectNoteInTabs(noteId: Note.Id) {
+        viewModelScope.launch {
+            val selectedNote = recover({ noteRepository.get(noteId) }) { e ->
+                // 諦める
+                println("onSelectNoteInTabs: ${e.message}")
+                return@launch
+            }
+            updateCurrentNoteThenRender(selectedNote)
+        }
+    }
+
+    fun closeNote(
+        noteId: Note.Id,
+        isFocused: Boolean
+    ) {
+        val openNoteIds = _uiState.value.editorState.openNoteIds
+        val newOpenNoteIds = openNoteIds - noteId
+
+        when (newOpenNoteIds.isEmpty()) {
+            true -> {
+                clearCurrentNote()
+                clearViewer()
+            }
+            false -> {
+                if (isFocused) {
+                    val currentNoteIdIndex = openNoteIds.indexOfFirst { it == noteId }
+                    val nextFocusedNoteIdIndex = when {
+                        currentNoteIdIndex >= 1 -> currentNoteIdIndex.dec()
+                        currentNoteIdIndex == 0 -> 1
+                        else -> throw IndexOutOfBoundsException("at MainScreenViewModel::closeNote")
+                    }
+                    val nextFocusedNoteId = openNoteIds[nextFocusedNoteIdIndex]
+
+                    onSelectNoteInTabs(nextFocusedNoteId)
+                }
+            }
+        }
+
+        updateOpenNoteIds(newOpenNoteIds)
+    }
+
     fun onEdited(sourceCode: SourceCode) {
+        val currentNote = _uiState.value.editorState.currentNote
+        check(currentNote != null)
         viewModelScope.launch {
             updateSourceCode(sourceCode)
-            render(
-                sourceCode = sourceCode,
-                textSizeSp = _uiState.value.fontSizeSp,
+            render(sourceCode)
+            fileManager.writeText(currentNote.metadata.fileName, sourceCode.value)
+        }
+    }
+
+    /* --- 状態更新 private methods --- */
+
+    private fun addNoteToTab(noteId: Note.Id) {
+        updateOpenNoteIds(_uiState.value.editorState.openNoteIds + listOf(noteId))
+    }
+
+    private fun updateOpenNoteIds(noteIds: List<Note.Id>) {
+        _uiState.update {
+            it.copy(
+                editorState = it.editorState.copy(
+                    openNoteIds = noteIds
+                )
             )
-            fileManager.writeText("typstnoteapp1111.txt", sourceCode.value)
+        }
+    }
+
+    private suspend fun updateCurrentNoteThenRender(note: Note) {
+        _uiState.update {
+            it.copy(
+                editorState = it.editorState.copy(
+                    currentNote = note
+                )
+            )
+        }
+        render(note.sourceCode)
+    }
+
+    private fun clearCurrentNote() {
+        _uiState.update {
+            it.copy(
+                editorState = it.editorState.copy(
+                    currentNote = null
+                )
+            )
         }
     }
 
     private fun updateSourceCode(sourceCode: SourceCode) {
         _uiState.update {
             it.copy(
-                sourceCode = sourceCode,
+                editorState = it.editorState.copy(
+                    currentNote = it.editorState.currentNote?.copy(
+                        sourceCode = sourceCode,
+                    )
+                )
             )
         }
-        println("updated source code!")
     }
 
     fun updateTextSizeSp(textSizeSp: Float?) = textSizeSp?.let {
@@ -72,19 +179,9 @@ class MainScreenViewModel(
                 fontSizeSp = textSizeSp
             )
         }
-        viewModelScope.launch {
-            render(
-                sourceCode = _uiState.value.sourceCode,
-                textSizeSp = textSizeSp,
-            )
-        }
     }
 
-    private suspend fun render(
-        sourceCode: SourceCode,
-        @Suppress("unused") textSizeSp: Float // parse 内でフォントサイズ参照するがここでは使ってない
-    ) {
-        println("Start render!")
+    private suspend fun render(sourceCode: SourceCode) {
         val contentBlocks = recover({ blockParser.parse(sourceCode.value) }) { null }
         contentBlocks?.let {
             clearCompileError()
@@ -113,7 +210,15 @@ class MainScreenViewModel(
     private fun updateContents(contentBlocks: List<ContentBlock>) {
         _uiState.update {
             it.copy(
-                contentBlocks = contentBlocks,
+                currentRenderedContent = contentBlocks,
+            )
+        }
+    }
+
+    private fun clearViewer() {
+        _uiState.update {
+            it.copy(
+                currentRenderedContent = emptyList()
             )
         }
     }
