@@ -9,14 +9,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
-import com.mono9rome.typst_note_app.ui.NoteFieldViewModel
-
-private val noteFieldUiState = NoteFieldViewModel.UiState(
-    sourceCode = SampleData.sourceCode,
-    textSizeSp = 18f,
-    contentBlocks = SampleData.contentBlocks,
-    isCompileError = false
-)
 
 @Preview(
     widthDp = PreviewConfig.WIDTH_DP_HD,

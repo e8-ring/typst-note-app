@@ -10,8 +10,11 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.InsertDriveFile
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -25,7 +28,6 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.mono9rome.typst_note_app.LocalAppComponent
 import com.mono9rome.typst_note_app.model.Note
-import com.mono9rome.typst_note_app.ui.borderColor
 import com.mono9rome.typst_note_app.ui.editor.indicatorHeight
 import com.mono9rome.typst_note_app.ui.editor.tabsHeight
 import com.mono9rome.typst_note_app.ui.tabBackgroundColor
@@ -40,6 +42,8 @@ fun NoteChooser(
     }
     NoteChooserBody(
         notes = viewModel.list.collectAsState().value,
+        onAddNewNote = viewModel::addNewNote,
+        onReload = viewModel::reload,
         onClickItem = onClickItem,
         modifier = modifier,
     )
@@ -48,11 +52,16 @@ fun NoteChooser(
 @Composable
 fun NoteChooserBody(
     notes: List<Note.Light>,
+    onAddNewNote: () -> Unit,
+    onReload: () -> Unit,
     onClickItem: (Note.Id) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier.fillMaxSize()) {
-        Spacer(modifier = Modifier.height((tabsHeight - indicatorHeight).dp))
+        ToolIcons(
+            onAddNewNote = onAddNewNote,
+            onReload = onReload
+        )
         HorizontalDivider(
             thickness = indicatorHeight.dp,
             color = tabBackgroundColor
@@ -68,6 +77,47 @@ fun NoteChooserBody(
                     onClick = onClickItem
                 )
             }
+        }
+    }
+}
+
+@Composable
+fun ToolIcons(
+    onAddNewNote: () -> Unit,
+    onReload: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val rowHeight = tabsHeight - indicatorHeight
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(rowHeight.dp),
+        horizontalArrangement = Arrangement.End,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        IconButton(
+            onClick = onAddNewNote,
+            modifier = Modifier
+                .size((rowHeight - 2).dp)
+                .padding(horizontal = 4.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.Add,
+                contentDescription = "ノート作成",
+                modifier = Modifier.size((rowHeight * 0.8).dp),
+            )
+        }
+        IconButton(
+            onClick = onReload,
+            modifier = Modifier
+                .size((rowHeight - 2).dp)
+                .padding(horizontal = 4.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.Refresh,
+                contentDescription = "再読み込み",
+                modifier = Modifier.size((rowHeight * 0.8).dp),
+            )
         }
     }
 }

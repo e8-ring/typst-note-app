@@ -1,28 +1,43 @@
 package com.mono9rome.typst_note_app.model
 
-import com.mono9rome.typst_note_app.ui.SourceCode
+import kotlinx.serialization.Serializable
+data class SourceCode(val value: String)
 
 data class Note(
+    val id: Id,
     val metadata: Metadata,
     val sourceCode: SourceCode,
 ) {
-    data class Metadata(
-        val id: Id,
-        val title: Title?,
-        val tags: List<Tag>,
-    ) {
-        val fileName: String = "${id.value}.typ"
-    }
-
     data class Light(
         val id: Id,
         val title: Title?,
     )
 
-    data class Id(val value: String) {
+    @Serializable
+    data class Metadata(
+        val title: Title?,
+        val tags: List<Tag>,
+    ) {
+        companion object {
+            val default = Metadata(
+                title = null,
+                tags = emptyList()
+            )
+        }
+    }
+    typealias MetaDataMap = Map<Id, Metadata>
+
+    @Serializable
+    @JvmInline
+    value class Id(val value: String) {
         fun toFileName(): String = "$value.typ"
     }
-    @JvmInline value class Title(val value: String)
+
+    @Serializable
+    @JvmInline
+    value class Title(val value: String)
+
+    @Serializable
     data class Tag(val name: String)
 }
 

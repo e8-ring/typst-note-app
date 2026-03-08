@@ -27,7 +27,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mono9rome.typst_note_app.model.Note
-import com.mono9rome.typst_note_app.ui.SourceCode
+import com.mono9rome.typst_note_app.model.SourceCode
 import com.mono9rome.typst_note_app.ui.activeTextColor
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -179,11 +179,9 @@ fun CodeEditorUI(
                     // テキストのレイアウト結果と同じ高さを指定して同期させる
                     .height(textHeight)
             ) {
-                println("Text length: ${textFieldValue.text.length}")
                 val layoutResult = textLayoutResult ?: return@Canvas
                 // 論理行（改行コードで区切られた行）のカウント用
                 var logicalLineNumber = 1
-                println("Line count: ${layoutResult.lineCount}")
                 // 物理行（画面上で実際に折り返されて描画されている行）をループ
                 for (i in 0 until layoutResult.lineCount) {
                     // i 番目の物理行がテキスト全体の何文字目 (改行文字含む) から始まるか
@@ -196,10 +194,7 @@ fun CodeEditorUI(
                     // 3. n 行目までが空になるというのは、0 行目が空な場合のみ。
                     //    - 文字列が "\n" の場合、2 つの論理行からなる。
                     //    - このとき、最後の 1 論理行目の start offset は 0 となる。
-                    // 2. テキストが "\n" なら 2 論理行からなる。
-                    //    2 論理行目の start offset は 0 となる。
-                    //    テキストが "
-                    println("Line startOffset: $lineStartOffset")
+
                     // その物理行が、論理行の先頭である場合のみ行番号を描画する
                     // （折り返された2行目以降には行番号を書かない）
                     val isFirstLine = (i == 0) // エディタの 1 行目かどうか

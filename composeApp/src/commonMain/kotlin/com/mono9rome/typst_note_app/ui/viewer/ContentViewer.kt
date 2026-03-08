@@ -7,10 +7,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.mono9rome.typst_note_app.model.ContentBlock
+import com.mono9rome.typst_note_app.model.Note
 import com.mono9rome.typst_note_app.ui.viewer.renderer.ContentRenderer
 
 @Composable
 fun ContentViewer(
+    currentNoteId: Note.Id,
     fontSizeSp: Float,
     contentBlocks: List<ContentBlock>,
     modifier: Modifier = Modifier
@@ -21,8 +23,9 @@ fun ContentViewer(
             .padding(all = 8.dp)
     ) {
         ContentRenderer(
+            currentNoteId = currentNoteId,
             contentBlocks = contentBlocks,
-            textSizeSp = fontSizeSp,
+            fontSizeSp = fontSizeSp,
         )
     }
 }

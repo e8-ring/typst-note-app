@@ -22,15 +22,14 @@ const val indicatorHeight = 2
 
 @Composable
 fun EditorTabs(
-    openNoteIds: List<Note.Id>,
+    openNotes: List<Note.Light>,
     currentNoteId: Note.Id,
-    getNoteTitle: Note.Id.() -> Note.Title?,
     onSelectNote: (Note.Id) -> Unit,
-    onCloseNote: (noteId: Note.Id, isFocused: Boolean) -> Unit,
+    onCloseNote: (note: Note.Light, isFocused: Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier) {
-        val selectedTabIndex = openNoteIds.indexOfFirst { it == currentNoteId }
+        val selectedTabIndex = openNotes.indexOfFirst { it.id == currentNoteId }
         PrimaryScrollableTabRow(
             selectedTabIndex = selectedTabIndex,
             edgePadding = 0.dp,
@@ -47,11 +46,11 @@ fun EditorTabs(
                 )
             },
         ) {
-            openNoteIds.forEach { noteId ->
-                val selected = noteId == currentNoteId
+            openNotes.forEach { note ->
+                val selected = note.id == currentNoteId
                 Tab(
                     selected = selected,
-                    onClick = { onSelectNote(noteId) },
+                    onClick = { onSelectNote(note.id) },
                     modifier = Modifier.height(tabsHeight.dp),
                     selectedContentColor = activeTextColor,
                     unselectedContentColor = inactiveTextColor,
@@ -61,17 +60,17 @@ fun EditorTabs(
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             Text(
-                                text = noteId.getNoteTitle()?.value ?: noteId.value,
+                                text = note.title?.value ?: note.id.value,
                                 fontSize = 12.sp
                             )
                             Icon(
                                 imageVector = Icons.Default.Close,
-                                contentDescription = "Close ${noteId.value}",
+                                contentDescription = "Close ${note.id.value}",
                                 modifier = Modifier
                                     .size(12.dp)
                                     .clip(CircleShape)
                                     .clickable(
-                                        onClick = { onCloseNote(noteId, selected) },
+                                        onClick = { onCloseNote(note, selected) },
                                     )
                             )
                         }

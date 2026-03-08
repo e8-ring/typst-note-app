@@ -3,11 +3,13 @@ package com.mono9rome.typst_note_app.ui
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import arrow.core.raise.recover
-import com.mono9rome.typst_note_app.data.LocalFileManager
 import com.mono9rome.typst_note_app.data.NoteRepository
 import com.mono9rome.typst_note_app.model.ContentBlock
 import com.mono9rome.typst_note_app.model.Note
+import com.mono9rome.typst_note_app.model.SourceCode
 import com.mono9rome.typst_note_app.parser.BlockParser
+import com.mono9rome.typst_note_app.ui.state.EditorStateManager
+import com.mono9rome.typst_note_app.ui.state.MainUiState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -18,167 +20,107 @@ import me.tatarka.inject.annotations.Inject
 @Inject
 class MainScreenViewModel(
     private val blockParser: BlockParser,
-    private val fileManager: LocalFileManager,
     private val noteRepository: NoteRepository,
+    private val editorStateManager: EditorStateManager,
 ) : ViewModel() {
 
-    data class EditorState(
-        val openNoteIds: List<Note.Id>,
-        val currentNote: Note?
-    ) {
-        companion object {
-            val default = EditorState(
-                openNoteIds = listOf(),
-                currentNote = null
-            )
-        }
-    }
+    private val _uiState = MutableStateFlow(MainUiState.default)
+    val uiState: StateFlow<MainUiState> = _uiState.asStateFlow()
 
-    data class UiState(
-        val editorState: EditorState,
-        val fontSizeSp: Float,
-        val currentRenderedContent: List<ContentBlock>,
-        val isCompileError: Boolean,
-    ) {
-        companion object {
-            val default = UiState(
-                editorState = EditorState.default,
-                fontSizeSp = 14f,
-                currentRenderedContent = listOf(),
-                isCompileError = false
-            )
-        }
-    }
-
-    private val _uiState = MutableStateFlow(UiState.default)
-    val uiState: StateFlow<UiState> = _uiState.asStateFlow()
-
-    init {
+//    init {
 //        _uiState.update {
 //            // アップデート
 //        }
-    }
+//    }
 
     /* --- public methods --- */
 
     fun onSelectFileInChooser(noteId: Note.Id) {
         viewModelScope.launch {
-            addNoteToTab(noteId)
-            val selectedNote = recover({ noteRepository.get(noteId) }) { e ->
-                // 諦める
-                println("Error: ${e.message}")
-                return@launch
+            if (isNotYetOpen(noteId)) {
+                val note = Note.Light(
+                    id = noteId,
+                    title = recover({ noteRepository.getMetadata(noteId).title }) { null }
+                )
+                with(editorStateManager) {
+                    _uiState.addNoteToTab(note)
+                }
             }
-            updateCurrentNoteThenRender(selectedNote)
+            onSelectNoteInTabs(noteId)
         }
     }
 
-    fun onSelectNoteInTabs(noteId: Note.Id) {
+    private fun isNotYetOpen(noteId: Note.Id): Boolean = !(_uiState.value.editorState.openNotes.any { it.id == noteId })
+
+    fun onSelectNoteInTabs(noteId: Note.Id) = with(editorStateManager) {
         viewModelScope.launch {
             val selectedNote = recover({ noteRepository.get(noteId) }) { e ->
                 // 諦める
                 println("onSelectNoteInTabs: ${e.message}")
                 return@launch
             }
-            updateCurrentNoteThenRender(selectedNote)
+            _uiState.updateCurrentNote { selectedNote }
+            render(selectedNote.sourceCode)
         }
     }
 
     fun closeNote(
-        noteId: Note.Id,
+        note: Note.Light,
         isFocused: Boolean
     ) {
-        val openNoteIds = _uiState.value.editorState.openNoteIds
-        val newOpenNoteIds = openNoteIds - noteId
+        val openNotes = _uiState.value.editorState.openNotes
+        val newOpenNotes = openNotes - note
 
-        when (newOpenNoteIds.isEmpty()) {
-            true -> {
-                clearCurrentNote()
-                clearViewer()
-            }
+        when (newOpenNotes.isEmpty()) {
+            true -> initializeEditor()
             false -> {
                 if (isFocused) {
-                    val currentNoteIdIndex = openNoteIds.indexOfFirst { it == noteId }
+                    val currentNoteIdIndex = openNotes.indexOfFirst { it.id == note.id }
                     val nextFocusedNoteIdIndex = when {
                         currentNoteIdIndex >= 1 -> currentNoteIdIndex.dec()
                         currentNoteIdIndex == 0 -> 1
                         else -> throw IndexOutOfBoundsException("at MainScreenViewModel::closeNote")
                     }
-                    val nextFocusedNoteId = openNoteIds[nextFocusedNoteIdIndex]
+                    val nextFocusedNoteId = openNotes[nextFocusedNoteIdIndex].id
 
                     onSelectNoteInTabs(nextFocusedNoteId)
                 }
             }
         }
 
-        updateOpenNoteIds(newOpenNoteIds)
+        with(editorStateManager) { _uiState.updateOpenNotes { newOpenNotes } }
     }
 
-    fun onEdited(sourceCode: SourceCode) {
+    fun onTitleChange(
+        noteId: Note.Id,
+        title: Note.Title
+    ) = with(editorStateManager) {
+        _uiState.updateCurrentNoteTitle(noteId, title)
+        viewModelScope.launch {
+            recover({
+                noteRepository.changeTitle(noteId, title)
+            }) { e ->
+                // TODO: エラーハンドリング
+                println("Error: ${e.message}")
+            }
+        }
+    }
+
+    fun onEdited(sourceCode: SourceCode) = with(editorStateManager) {
         val currentNote = _uiState.value.editorState.currentNote
         check(currentNote != null)
         viewModelScope.launch {
-            updateSourceCode(sourceCode)
+            _uiState.updateSourceCode(sourceCode)
             render(sourceCode)
-            fileManager.writeText(currentNote.metadata.fileName, sourceCode.value)
+            noteRepository.write(currentNote.id, sourceCode.value)
         }
     }
 
     /* --- 状態更新 private methods --- */
 
-    private fun addNoteToTab(noteId: Note.Id) {
-        updateOpenNoteIds(_uiState.value.editorState.openNoteIds + listOf(noteId))
-    }
-
-    private fun updateOpenNoteIds(noteIds: List<Note.Id>) {
-        _uiState.update {
-            it.copy(
-                editorState = it.editorState.copy(
-                    openNoteIds = noteIds
-                )
-            )
-        }
-    }
-
-    private suspend fun updateCurrentNoteThenRender(note: Note) {
-        _uiState.update {
-            it.copy(
-                editorState = it.editorState.copy(
-                    currentNote = note
-                )
-            )
-        }
-        render(note.sourceCode)
-    }
-
-    private fun clearCurrentNote() {
-        _uiState.update {
-            it.copy(
-                editorState = it.editorState.copy(
-                    currentNote = null
-                )
-            )
-        }
-    }
-
-    private fun updateSourceCode(sourceCode: SourceCode) {
-        _uiState.update {
-            it.copy(
-                editorState = it.editorState.copy(
-                    currentNote = it.editorState.currentNote?.copy(
-                        sourceCode = sourceCode,
-                    )
-                )
-            )
-        }
-    }
-
-    fun updateTextSizeSp(textSizeSp: Float?) = textSizeSp?.let {
-        _uiState.update {
-            it.copy(
-                fontSizeSp = textSizeSp
-            )
-        }
+    private fun initializeEditor() = with(editorStateManager) {
+        _uiState.clearCurrentNote()
+        clearViewer()
     }
 
     private suspend fun render(sourceCode: SourceCode) {

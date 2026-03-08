@@ -8,6 +8,7 @@ plugins {
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.composeHotReload)
     alias(libs.plugins.ksp)
+    alias(libs.plugins.serialization)
 }
 
 kotlin {
@@ -35,22 +36,24 @@ kotlin {
             implementation(libs.compose.runtime)
             implementation(libs.compose.foundation)
             implementation(libs.compose.material3)
-            implementation("org.jetbrains.compose.material:material-icons-extended:1.7.3")
+            implementation(libs.material.icons.extended)
             implementation(libs.compose.ui)
             implementation(libs.compose.components.resources)
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.androidx.lifecycle.viewmodelCompose)
             implementation(libs.androidx.lifecycle.runtimeCompose)
             // Core
-            implementation("net.java.dev.jna:jna:5.18.1")
-            implementation("io.arrow-kt:arrow-core:2.2.1.1")
+            implementation(libs.jna)
+            implementation(libs.arrow.core)
             // DI
             implementation(libs.kotlin.inject.runtime)
             // Okio
-            implementation("com.squareup.okio:okio:3.16.2")
+            implementation(libs.okio)
+            // kotlinx-serialization
+            implementation(libs.kotlinx.serialization.json)
             // SVG
-            implementation("io.coil-kt.coil3:coil-compose:3.4.0")
-            implementation("io.coil-kt.coil3:coil-svg:3.4.0")
+            implementation(libs.coil.compose)
+            implementation(libs.coil.svg)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)

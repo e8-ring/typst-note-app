@@ -26,6 +26,7 @@ fun printContentBlocks(blocks: List<ContentBlock>, indent: String = "") {
                             )
 
                             is InlineMath -> println("$indent  InlineMath: \"(...)\"")
+                            is LinkToNote -> println("$indent LinkToNote: ${inlineElement.noteId.value}")
                         }
                     }
                 }

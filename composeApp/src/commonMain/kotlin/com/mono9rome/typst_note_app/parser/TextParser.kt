@@ -32,7 +32,6 @@ class TextParser(
     // 注意 : [text] にブロック数式は含まれない。
     context(_: Raise<Err>)
     private suspend fun parseStyle(text: String): Paragraph {
-        println("parseStyle!: $text")
         val elements = mutableListOf<StyleElement>()
 
         // $ の中かどうかの状態変数
@@ -59,6 +58,7 @@ class TextParser(
                         currentPlainExtracted.append(c)
                     }
                 }
+
                 '*' -> {
                     if (insideDollar) {
                         // $ の中にある * は太字に関与しない。
@@ -91,6 +91,7 @@ class TextParser(
                         }
                     }
                 }
+
                 else -> {
                     // その他の文字の場合
                     if (insideAsterisk) {
@@ -115,16 +116,54 @@ class TextParser(
     context(_: Raise<Err>)
     private suspend fun parseInlineElements(text: String): List<InlineElement> =
         mathParser.parse(text, MathParser.MathType.Inline)
-            .map { representation ->
-                println("parseInlineElements!: $representation")
+            .flatMap { representation ->
                 when (representation) {
-                    is MathParser.Repr.Plain -> PlainText(representation.source.removeAllReturns())
+                    is MathParser.Repr.Plain -> parseLink(representation.source)
                     is MathParser.Repr.Math -> {
                         val currentFontSize = fontSizeProvider.current
-                        InlineMath(content = mathRenderer.toPng(representation.source, currentFontSize))
+                        InlineMath(content = mathRenderer.toPng(representation.source, currentFontSize)).let(::listOf)
                     }
                 }
             }
+
+    private fun parseLink(text: String): List<InlineElement> {
+        val elements = mutableListOf<InlineElement>()
+
+        val regex = Regex("""(?<!\\)%(.*?)(?<!\\)%""")
+        val matchResults = regex.findAll(text)
+
+        var lastIndex = 0 // 現在読み取っている文字列の位置
+
+        for (match in matchResults) {
+            // 1. マッチした箇所の手前までの文字列を取り出し、Plane（通常の文字列）として扱う
+            val textBeforeMatch = text.substring(lastIndex, match.range.first)
+            if (textBeforeMatch.isNotEmpty()) {
+                // $ 前のエスケープ文字 (\) を取り除く
+                val unescapedText = textBeforeMatch.replace("\\%", "%").removeAllReturns()
+                elements.add(PlainText(unescapedText))
+            }
+
+            // 2. リンクにマッチした場合
+            val linkContent = match.groups[1]?.value
+            if (linkContent != null) {
+                // リンクを追加
+                val link = LinkToNote(Note.Id(linkContent))
+                elements.add(link)
+            }
+
+            // 3. 次の検索開始位置を更新
+            lastIndex = match.range.last + 1
+        }
+
+        // 最後のマッチ以降に残っている文字列を Plain として追加
+        val remainingText = text.substring(lastIndex)
+        if (remainingText.isNotEmpty()) {
+            val unescapedRemainingText = remainingText.replace("\\%", "%").removeAllReturns()
+            elements.add(PlainText(unescapedRemainingText))
+        }
+
+        return elements
+    }
 
     private fun String.removeAllReturns(): String = this.replace('\n', ' ')
 }

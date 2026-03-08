@@ -1,12 +1,6 @@
 package com.mono9rome.typst_note_app.ui.preview
 
-import com.mono9rome.typst_note_app.model.BulletList
-import com.mono9rome.typst_note_app.model.ContentList
-import com.mono9rome.typst_note_app.model.NumberedList
-import com.mono9rome.typst_note_app.model.Paragraph
-import com.mono9rome.typst_note_app.model.PlainNode
-import com.mono9rome.typst_note_app.model.PlainText
-import com.mono9rome.typst_note_app.ui.SourceCode
+import com.mono9rome.typst_note_app.model.*
 
 class SampleData {
     companion object {

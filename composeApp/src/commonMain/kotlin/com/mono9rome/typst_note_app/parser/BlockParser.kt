@@ -26,10 +26,7 @@ class BlockParser(private val textParser: TextParser) {
     suspend fun parse(markdown: String): List<ContentBlock> {
         val lines = markdown.lines()
         val pos = intArrayOf(0)
-        return parseBlocks(lines, pos, 0).also {
-            println("parse result:\n")
-            printContentBlocks(it)
-        }
+        return parseBlocks(lines, pos, 0)
     }
 
     // 指定されたインデント(minIndent)以上のブロック群をパースする

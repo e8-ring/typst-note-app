@@ -11,12 +11,14 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.sp
 import com.mono9rome.typst_note_app.model.BulletList
 import com.mono9rome.typst_note_app.model.ContentList
+import com.mono9rome.typst_note_app.model.Note
 import com.mono9rome.typst_note_app.model.NumberedList
 import com.mono9rome.typst_note_app.ui.preview.PreviewConfig
 import com.mono9rome.typst_note_app.ui.preview.SampleData
 
 @Composable
 fun ListRenderer(
+    currentNoteId: Note.Id,
     contentList: ContentList,
     fontSizeSp: Float,
     modifier: Modifier = Modifier
@@ -53,8 +55,9 @@ fun ListRenderer(
                     }
                 }
                 ContentRenderer(
+                    currentNoteId = currentNoteId,
                     contentBlocks = item.blocks,
-                    textSizeSp = fontSizeSp,
+                    fontSizeSp = fontSizeSp,
                     modifier = Modifier.weight(1f)
                 )
             }
@@ -70,6 +73,7 @@ fun ListRenderer(
 @Composable
 fun BlockMathRendererPreview() {
     ListRenderer(
+        currentNoteId = Note.Id("0000"),
         contentList = (SampleData.contentBlocks[1] as ContentList),
         fontSizeSp = SampleData.textSizeSp
     )

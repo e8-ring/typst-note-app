@@ -1,32 +1,32 @@
 package com.mono9rome.typst_note_app.ui.viewer.renderer
 
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import com.mono9rome.typst_note_app.model.BlockMath
 import com.mono9rome.typst_note_app.model.ContentBlock
 import com.mono9rome.typst_note_app.model.ContentList
+import com.mono9rome.typst_note_app.model.Note
 import com.mono9rome.typst_note_app.model.Paragraph
 
 @Composable
 fun ContentRenderer(
+    currentNoteId: Note.Id,
     contentBlocks: List<ContentBlock>,
-    textSizeSp: Float,
+    fontSizeSp: Float,
     modifier: Modifier = Modifier,
 ) {
     Column(
         modifier = modifier.fillMaxWidth()
     ) {
-        contentBlocks.forEach { contentBlock ->
+        contentBlocks.forEachIndexed { index, contentBlock ->
             when (contentBlock) {
                 is Paragraph -> {
                     ParagraphRenderer(
+                        currentNoteId = currentNoteId,
                         paragraph = contentBlock,
-                        fontSizeSp = textSizeSp,
+                        fontSizeSp = fontSizeSp,
                     )
                 }
                 is BlockMath -> {
@@ -36,12 +36,15 @@ fun ContentRenderer(
                 }
                 is ContentList -> {
                     ListRenderer(
+                        currentNoteId = currentNoteId,
                         contentList = contentBlock,
-                        fontSizeSp = textSizeSp
+                        fontSizeSp = fontSizeSp
                     )
                 }
             }
-            Spacer(Modifier.height((textSizeSp * 0.5).dp))
+            if (index != contentBlocks.size - 1) {
+                SpacerBetweenBlocks(fontSizeSp)
+            }
         }
     }
 }

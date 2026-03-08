@@ -20,6 +20,7 @@ fun MainScreen(
         viewModel { it.mainScreenViewModelProvider() }
     }
     val uiState by viewModel.uiState.collectAsState()
+    val currentNote = uiState.editorState.currentNote
     MainScreenContainer(
         modifier = modifier,
         sidebarContent = {
@@ -28,29 +29,33 @@ fun MainScreen(
             )
         },
         noteTabContent = {
-            if (uiState.editorState.currentNote != null) {
+            if (currentNote != null) {
                 EditorTabs(
-                    openNoteIds = uiState.editorState.openNoteIds,
-                    currentNoteId = uiState.editorState.currentNote!!.metadata.id,
-                    getNoteTitle = { null }, // TODO: title 返す関数を入れる
+                    openNotes = uiState.editorState.openNotes,
+                    currentNoteId = currentNote.id,
                     onSelectNote = viewModel::onSelectNoteInTabs,
                     onCloseNote = viewModel::closeNote,
                 )
             }
         },
         editorContent = {
-            Editor(
-                currentNote = uiState.editorState.currentNote,
-                fontSizeSp = uiState.fontSizeSp,
-                updateSourceCode = viewModel::onEdited,
-                textSizeChanger = viewModel::updateTextSizeSp
-            )
+            if (currentNote != null) {
+                Editor(
+                    currentNote = currentNote,
+                    fontSizeSp = uiState.fontSizeSp,
+                    onTitleChange = viewModel::onTitleChange,
+                    updateSourceCode = viewModel::onEdited
+                )
+            }
         },
         viewerContent = {
-            ContentViewer(
-                fontSizeSp = uiState.fontSizeSp,
-                contentBlocks = uiState.currentRenderedContent,
-            )
+            if (currentNote != null) {
+                ContentViewer(
+                    currentNoteId = currentNote.id,
+                    fontSizeSp = uiState.fontSizeSp,
+                    contentBlocks = uiState.currentRenderedContent,
+                )
+            }
         }
     )
 }

@@ -56,5 +56,6 @@ data class InlineMath(
     val id: UniqueId = UUID.randomUUID().toString().let(::UniqueId),
     val content: MathRepr,
 ) : InlineElement
+data class LinkToNote(val noteId: Note.Id) : InlineElement
 
 @JvmInline value class UniqueId(val value: String)
