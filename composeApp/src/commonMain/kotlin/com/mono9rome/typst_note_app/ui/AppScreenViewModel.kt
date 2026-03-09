@@ -18,7 +18,7 @@ import kotlinx.coroutines.launch
 import me.tatarka.inject.annotations.Inject
 
 @Inject
-class MainScreenViewModel(
+class AppScreenViewModel(
     private val blockParser: BlockParser,
     private val noteRepository: NoteRepository,
     private val editorStateManager: EditorStateManager,

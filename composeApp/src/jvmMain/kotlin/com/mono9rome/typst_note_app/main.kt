@@ -15,6 +15,8 @@ fun main() = application {
             ${throwable.javaClass.simpleName}: ${throwable.message}
         """.trimIndent()
 
+        throwable.printStackTrace()
+
         // Swing の機能を使ってエラーダイアログを強制表示する
         JOptionPane.showMessageDialog(
             null,

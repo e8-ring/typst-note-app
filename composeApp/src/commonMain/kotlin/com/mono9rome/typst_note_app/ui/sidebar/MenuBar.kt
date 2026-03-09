@@ -1,0 +1,76 @@
+package com.mono9rome.typst_note_app.ui.sidebar
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Tag
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.unit.dp
+
+@Composable
+fun MenuBar(
+    openToolBar: (contentType: SidebarState) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier
+            .width(40.dp)
+            .fillMaxHeight()
+            .background(Color.LightGray),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        ToolButton(
+            onClick = { openToolBar(SidebarState.AllList) },
+            imageVector = Icons.Default.Menu,
+            contentDescription = "ノート一覧"
+        )
+        ToolButton(
+            onClick = { openToolBar(SidebarState.Search) },
+            imageVector = Icons.Default.Search,
+            contentDescription = "ノート検索"
+        )
+        ToolButton(
+            onClick = { openToolBar(SidebarState.Tags) },
+            imageVector = Icons.Default.Tag,
+            contentDescription = "タグ一覧"
+        )
+        ToolButton(
+            onClick = { openToolBar(SidebarState.Settings) },
+            imageVector = Icons.Default.Settings,
+            contentDescription = "設定"
+        )
+    }
+}
+
+@Composable
+private fun ToolButton(
+    onClick: () -> Unit,
+    imageVector: ImageVector,
+    contentDescription: String
+) {
+    IconButton(
+        onClick = onClick,
+        modifier = Modifier
+            .size(32.dp)
+            .padding(top = 12.dp)
+    ) {
+        Icon(
+            imageVector = imageVector,
+            contentDescription = contentDescription,
+            modifier = Modifier.size(18.dp)
+        )
+    }
+}

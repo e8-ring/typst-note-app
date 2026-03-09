@@ -34,7 +34,7 @@ import com.mono9rome.typst_note_app.ui.tabBackgroundColor
 
 @Composable
 fun NoteChooser(
-    onClickItem: (Note.Id) -> Unit,
+    onClickFile: (Note.Id) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val viewModel = LocalAppComponent.current.let {
@@ -44,7 +44,7 @@ fun NoteChooser(
         notes = viewModel.list.collectAsState().value,
         onAddNewNote = viewModel::addNewNote,
         onReload = viewModel::reload,
-        onClickItem = onClickItem,
+        onClickFile = onClickFile,
         modifier = modifier,
     )
 }
@@ -54,7 +54,7 @@ fun NoteChooserBody(
     notes: List<Note.Light>,
     onAddNewNote: () -> Unit,
     onReload: () -> Unit,
-    onClickItem: (Note.Id) -> Unit,
+    onClickFile: (Note.Id) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier.fillMaxSize()) {
@@ -74,7 +74,7 @@ fun NoteChooserBody(
             items(notes) { note ->
                 FileItem(
                     noteMetadata = note,
-                    onClick = onClickItem
+                    onClick = onClickFile
                 )
             }
         }
