@@ -7,6 +7,7 @@ import com.mono9rome.typst_note_app.LocalAppComponent
 import com.mono9rome.typst_note_app.model.Note
 import com.mono9rome.typst_note_app.ui.sidebar.content.NoteChooser
 import com.mono9rome.typst_note_app.ui.sidebar.content.NoteSearch
+import com.mono9rome.typst_note_app.ui.sidebar.content.NoteTags
 
 @Composable
 fun Sidebar(
@@ -28,7 +29,9 @@ fun Sidebar(
                 sidebarUiState = uiState,
                 onClickFile = onClickFile,
                 notesManager = viewModel.notesManager,
-                searchManager = viewModel.searchManager,
+                noteSearchManager = viewModel.noteSearchManager,
+                tagsManager = viewModel.tagsManager,
+                tagSearchManager = viewModel.tagSearchManager,
                 modifier = modifier
             )
         }
@@ -40,7 +43,9 @@ fun SidebarContent(
     sidebarUiState: SidebarViewModel.UiState,
     onClickFile: (Note.Id) -> Unit,
     notesManager: SidebarViewModel.NotesManager,
-    searchManager: SidebarViewModel.SearchManager,
+    noteSearchManager: SidebarViewModel.SearchManager<Note.Medium>,
+    tagsManager: SidebarViewModel.TagsManager,
+    tagSearchManager: SidebarViewModel.SearchManager<Note.Tag>,
     modifier: Modifier = Modifier
 ) {
     val noteMediumList = sidebarUiState.noteList
@@ -57,12 +62,15 @@ fun SidebarContent(
         }
         MenuBarContentType.Search -> {
             NoteSearch(
-                searchManager = searchManager,
+                noteSearchManager = noteSearchManager,
                 onClickFile = onClickFile,
             )
         }
         MenuBarContentType.Tags -> {
-
+            NoteTags(
+                tagsManager = tagsManager,
+                tagSearchManager = tagSearchManager
+            )
         }
         MenuBarContentType.Settings -> {
 

@@ -25,14 +25,13 @@ fun NoteChooser(
     noteLightList: List<Note.Light>,
     onClickFile: (Note.Id) -> Unit,
     notesManager: SidebarViewModel.NotesManager,
-    modifier: Modifier = Modifier
+    @Suppress("unused") modifier: Modifier = Modifier
 ) {
     NoteChooserBody(
         notes = noteLightList,
         onAddNewNote = notesManager::addNewNote,
         onReload = notesManager::refresh,
         onClickFile = onClickFile,
-        modifier = modifier,
     )
 }
 
@@ -74,7 +73,7 @@ fun ToolIcons(
     onReload: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val rowHeight = tabsHeight - indicatorHeight
+    val rowHeight = tabsHeight + 6
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -85,7 +84,7 @@ fun ToolIcons(
         IconButton(
             onClick = onAddNewNote,
             modifier = Modifier
-                .size((rowHeight - 2).dp)
+                .size((rowHeight * 0.8).dp)
                 .padding(horizontal = 4.dp)
         ) {
             Icon(
@@ -97,7 +96,7 @@ fun ToolIcons(
         IconButton(
             onClick = onReload,
             modifier = Modifier
-                .size((rowHeight - 2).dp)
+                .size((rowHeight * 0.8).dp)
                 .padding(horizontal = 4.dp)
         ) {
             Icon(

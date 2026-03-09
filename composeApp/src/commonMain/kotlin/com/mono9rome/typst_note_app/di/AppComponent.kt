@@ -4,6 +4,7 @@ import com.mono9rome.typst_note_app.core.renderer.MathRenderer
 import com.mono9rome.typst_note_app.core.renderer.RustMathRenderer
 import com.mono9rome.typst_note_app.data.LocalFileManager
 import com.mono9rome.typst_note_app.ui.AppScreenViewModel
+import com.mono9rome.typst_note_app.ui.editor.MetadataEditorViewModel
 import com.mono9rome.typst_note_app.ui.sidebar.SidebarViewModel
 import com.mono9rome.typst_note_app.ui.viewer.renderer.NestedContentRendererViewModel
 import me.tatarka.inject.annotations.Provides
@@ -17,5 +18,6 @@ abstract class AppComponent {
     abstract val mathRenderer: MathRenderer
     abstract val appScreenViewModelProvider: () -> AppScreenViewModel
     abstract val sidebarViewModelProvider: () -> SidebarViewModel
+    abstract val metadataEditorViewModelProvider: () -> MetadataEditorViewModel
     abstract val nestedContentRendererViewModelProvider: () -> NestedContentRendererViewModel
 }

@@ -3,11 +3,11 @@ package com.mono9rome.typst_note_app.ui
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import arrow.core.raise.recover
+import com.mono9rome.typst_note_app.core.parser.BlockParser
 import com.mono9rome.typst_note_app.data.NoteRepository
 import com.mono9rome.typst_note_app.model.ContentBlock
 import com.mono9rome.typst_note_app.model.Note
 import com.mono9rome.typst_note_app.model.SourceCode
-import com.mono9rome.typst_note_app.core.parser.BlockParser
 import com.mono9rome.typst_note_app.ui.state.EditorStateManager
 import com.mono9rome.typst_note_app.ui.state.MainUiState
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -98,10 +98,50 @@ class AppScreenViewModel(
         _uiState.updateCurrentNoteTitle(noteId, inputTitle)
         viewModelScope.launch {
             recover({
-                noteRepository.changeTitle(noteId, inputTitle)
+                noteRepository.updateTitle(noteId, inputTitle)
             }) { e ->
                 // TODO: エラーハンドリング
                 println("Error: ${e.message}")
+            }
+        }
+    }
+
+    fun attachTag(
+        noteId: Note.Id,
+        newTagName: Note.Tag.Name
+    ) = with(editorStateManager) {
+        _uiState.updateCurrentNote {
+            it?.copy(
+                metadata = it.metadata.copy(
+                    tags = it.metadata.tags + newTagName,
+                )
+            )
+        }
+        viewModelScope.launch {
+            recover({
+                noteRepository.addTag(noteId, newTagName)
+            }) { _ ->
+                // TODO: エラーハンドリング
+            }
+        }
+    }
+
+    fun deleteTag(
+        noteId: Note.Id,
+        tagName: Note.Tag.Name
+    ) = with(editorStateManager) {
+        _uiState.updateCurrentNote {
+            it?.copy(
+                metadata = it.metadata.copy(
+                    tags = it.metadata.tags - tagName,
+                )
+            )
+        }
+        viewModelScope.launch {
+            recover({
+                noteRepository.deleteTag(noteId, tagName)
+            }) { _ ->
+                // TODO: エラーハンドリング
             }
         }
     }

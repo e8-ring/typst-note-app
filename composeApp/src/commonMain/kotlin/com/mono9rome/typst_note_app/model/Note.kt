@@ -26,7 +26,7 @@ data class Note(
     @Serializable
     data class Metadata(
         val title: Title?,
-        val tags: List<Tag>,
+        val tags: List<Tag.Name>,
     ) {
         companion object {
             val default = Metadata(
@@ -50,7 +50,14 @@ data class Note(
     }
 
     @Serializable
-    data class Tag(val name: String)
+    data class Tag(
+        val name: Name,
+        val description: String?,
+    ) {
+        @Serializable
+        @JvmInline
+        value class Name(val value: String)
+    }
 }
 
 

@@ -12,6 +12,8 @@ fun Editor(
     currentNote: Note,
     fontSizeSp: Float,
     onTitleChange: (Note.Id, Note.Title) -> Unit,
+    attachTag: (Note.Id, Note.Tag.Name) -> Unit,
+    deleteTag: (Note.Id, Note.Tag.Name) -> Unit,
     updateSourceCode: (SourceCode) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -19,6 +21,8 @@ fun Editor(
         currentNote = currentNote,
         textSizeSp = fontSizeSp,
         onTitleChange = onTitleChange,
+        attachTag = attachTag,
+        deleteTag = deleteTag,
         onEdited = updateSourceCode,
         modifier = modifier
     )
@@ -29,6 +33,8 @@ fun EditorBody(
     currentNote: Note,
     textSizeSp: Float,
     onTitleChange: (Note.Id, Note.Title) -> Unit,
+    attachTag: (Note.Id, Note.Tag.Name) -> Unit,
+    deleteTag: (Note.Id, Note.Tag.Name) -> Unit,
     onEdited: (SourceCode) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -39,6 +45,8 @@ fun EditorBody(
             currentNoteId = currentNote.id,
             currentMetadata = currentNote.metadata,
             onTitleChange = onTitleChange,
+            attachTag = attachTag,
+            deleteTag = deleteTag
         )
         CodeEditorUI(
             currentNoteId = currentNote.id,

@@ -30,7 +30,7 @@ class NoteRepository(
     /* -- Read -- */
 
     context(_: Raise<Err>)
-    suspend fun getAllNotes(): List<Note.Medium> = fileManager.getAll()
+    suspend fun getAllNotes(): List<Note.Medium> = fileManager.getAllNoteIds()
         .map { fileName ->
             val noteId = Note.Id(fileName.removeTypExtension())
             Note.Medium(
@@ -49,12 +49,7 @@ class NoteRepository(
     context(_: Raise<Err>)
     suspend fun getMetadata(noteId: Note.Id): Note.Metadata {
         val metadataMap = fileManager.readNoteMetadataMap()
-        return metadataMap[noteId]?.let { metadata ->
-            Note.Metadata(
-                title = metadata.title,
-                tags = emptyList() // TODO
-            )
-        } ?: Note.Metadata.default
+        return metadataMap[noteId] ?: Note.Metadata.default
     }
 
     context(_: Raise<Err>)
@@ -66,19 +61,50 @@ class NoteRepository(
     /* -- Update -- */
 
     context(_: Raise<Err>)
-    suspend fun changeTitle(
+    suspend fun updateTitle(
         noteId: Note.Id,
         inputTitle: Note.Title
-    ) {
+    ) = updateMetadata(noteId) {
         val title = if (inputTitle.isBlank()) null else inputTitle
-        val metadataMap = fileManager.readNoteMetadataMap().toMutableMap()
-        val currentNoteMetadata = metadataMap[noteId]
-        metadataMap[noteId] = currentNoteMetadata?.copy(
+        it?.copy(
             title = title
         ) ?: Note.Metadata(
             title = title,
             tags = emptyList(),
         )
+    }
+
+    context(_: Raise<Err>)
+    suspend fun addTag(
+        noteId: Note.Id,
+        tag: Note.Tag.Name,
+    ) = updateMetadata(noteId) {
+        it?.copy(
+            tags = it.tags + listOf(tag)
+        ) ?: Note.Metadata(
+            title = null,
+            tags = listOf(tag),
+        )
+    }
+
+    context(_: Raise<Err>)
+    suspend fun deleteTag(
+        noteId: Note.Id,
+        tag: Note.Tag.Name,
+    ) = updateMetadata(noteId) {
+        it?.copy(
+            tags = it.tags - listOf(tag).toSet()
+        ) ?: Note.Metadata.default
+    }
+
+    context(_: Raise<Err>)
+    private suspend fun updateMetadata(
+        noteId: Note.Id,
+        update: (Note.Metadata?) -> Note.Metadata
+    ) {
+        val metadataMap = fileManager.readNoteMetadataMap().toMutableMap()
+        val currentNoteMetadataOrNull = metadataMap[noteId]
+        metadataMap[noteId] = update(currentNoteMetadataOrNull)
         fileManager.writeNoteMetadataMap(metadataMap)
     }
 

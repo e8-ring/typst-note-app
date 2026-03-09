@@ -46,6 +46,8 @@ fun AppScreen(
                             currentNote = currentNote,
                             fontSizeSp = uiState.fontSizeSp,
                             onTitleChange = viewModel::onTitleChange,
+                            attachTag = viewModel::attachTag,
+                            deleteTag = viewModel::deleteTag,
                             updateSourceCode = viewModel::onEdited,
                             modifier = modifier
                         )

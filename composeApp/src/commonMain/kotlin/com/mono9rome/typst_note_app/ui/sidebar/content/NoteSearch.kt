@@ -13,20 +13,21 @@ import androidx.compose.ui.unit.dp
 import com.mono9rome.typst_note_app.model.Note
 import com.mono9rome.typst_note_app.ui.component.SimpleTextField
 import com.mono9rome.typst_note_app.ui.editor.indicatorHeight
+import com.mono9rome.typst_note_app.ui.editor.tabsHeight
 import com.mono9rome.typst_note_app.ui.sidebar.FileItem
 import com.mono9rome.typst_note_app.ui.sidebar.SidebarViewModel
 import com.mono9rome.typst_note_app.ui.tabBackgroundColor
 
 @Composable
 fun NoteSearch(
-    searchManager: SidebarViewModel.SearchManager,
+    noteSearchManager: SidebarViewModel.SearchManager<Note.Medium>,
     onClickFile: (Note.Id) -> Unit,
 ) {
-    val searchState by searchManager.searchState.collectAsState()
+    val noteSearchState by noteSearchManager.searchState.collectAsState()
     NoteSearchBody(
-        enteredText = searchState.query,
-        onValueChange = searchManager::run,
-        result = searchState.result.map { it.toLight() },
+        enteredText = noteSearchState.query,
+        onValueChange = noteSearchManager::run,
+        result = noteSearchState.result.map { it.toLight() },
         onClickFile = onClickFile
     )
 }
@@ -43,6 +44,7 @@ fun NoteSearchBody(
         SearchField(
             enteredText = enteredText,
             onValueChange = onValueChange,
+            placeholderText = "search..."
         )
         HorizontalDivider(
             thickness = indicatorHeight.dp,
@@ -67,11 +69,14 @@ fun NoteSearchBody(
 fun SearchField(
     enteredText: String,
     onValueChange: (String) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    placeholderText: String = "",
 ) {
+    val rowHeight = tabsHeight + 6
     Box(
         modifier = modifier
-            .fillMaxWidth(),
+            .fillMaxWidth()
+            .height(rowHeight.dp),
         contentAlignment = Alignment.Center
     ) {
         SimpleTextField(
@@ -82,7 +87,7 @@ fun SearchField(
                     horizontal = 8.dp,
                     vertical = 4.dp
                 ),
-            placeholderText = "keywords..."
+            placeholderText = placeholderText
         )
     }
 }
