@@ -13,6 +13,16 @@ data class Note(
         val title: Title?,
     )
 
+    data class Medium(
+        val id: Id,
+        val metadata: Metadata
+    ) {
+        fun toLight(): Light = Light(
+            id = id,
+            title = metadata.title,
+        )
+    }
+
     @Serializable
     data class Metadata(
         val title: Title?,
@@ -35,7 +45,9 @@ data class Note(
 
     @Serializable
     @JvmInline
-    value class Title(val value: String)
+    value class Title(val value: String) {
+        fun isBlank(): Boolean = value.isBlank()
+    }
 
     @Serializable
     data class Tag(val name: String)

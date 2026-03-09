@@ -23,8 +23,11 @@ class LocalFileManager(private val storageDir: AppStorageDir) {
 
     private val contentDir = "${storageDir.path}/$CONTENT_DIR_NAME"
 
-    fun getAll(): List<String>? =
+    context(_: Raise<Err>)
+    suspend fun getAll(): List<String> = withContext(Dispatchers.IO) {
         FileSystem.SYSTEM.listOrNull(contentDir.toPath())?.map { it.name }
+            ?: raise(Err("FileManager.getAll : ノートファイルが 1 つも取得できませんでした。"))
+    }
 
     suspend fun makeFile(path: String) = writeText(path, "")
 

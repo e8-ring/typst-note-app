@@ -44,7 +44,8 @@ fun EditorBody(
             currentNoteId = currentNote.id,
             sourceCode = currentNote.sourceCode,
             fontSizeSp = textSizeSp,
-            onEdited = onEdited
+            onEdited = onEdited,
+            modifier = Modifier.weight(1f),
         )
     }
 }

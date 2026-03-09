@@ -11,7 +11,7 @@ import com.mono9rome.typst_note_app.ui.contentBackgroundColor
 
 @Composable
 fun SidebarContainer(
-    sidebarState: SidebarState,
+    menuBarContentType: MenuBarContentType,
     menuBar: @Composable RowScope.() -> Unit,
     content: @Composable BoxScope.(Modifier) -> Unit,
 ) {
@@ -24,7 +24,7 @@ fun SidebarContainer(
 
     Row {
         menuBar()
-        if (sidebarState != SidebarState.None) {
+        if (menuBarContentType != MenuBarContentType.None) {
             Row {
                 Box(
                     modifier = Modifier
@@ -32,7 +32,7 @@ fun SidebarContainer(
                         .fillMaxHeight()
                         .background(contentBackgroundColor),
                 ) {
-                    content(Modifier.padding(8.dp))
+                    content(Modifier.padding(2.dp))
                 }
                 ResizeHandle(
                     // ドラッグ開始時に、現在の実際の幅を仮想幅としてスナップショット

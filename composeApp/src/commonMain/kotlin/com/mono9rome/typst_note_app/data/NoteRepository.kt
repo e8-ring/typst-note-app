@@ -14,6 +14,31 @@ class NoteRepository(
     private val fileManager: LocalFileManager,
     private val counter: Counter
 ) {
+
+    /* -- Create -- */
+
+    suspend fun makeNew() {
+        recover({
+            counter.increment()
+            val newNoteId = counter.now()
+            fileManager.makeFile(newNoteId.toFilePath())
+        }) { e ->
+            throw IOException(e.message)
+        }
+    }
+
+    /* -- Read -- */
+
+    context(_: Raise<Err>)
+    suspend fun getAllNotes(): List<Note.Medium> = fileManager.getAll()
+        .map { fileName ->
+            val noteId = Note.Id(fileName.removeTypExtension())
+            Note.Medium(
+                id = noteId,
+                metadata = getMetadata(noteId),
+            )
+        }
+
     context(_: Raise<Err>)
     suspend fun get(noteId: Note.Id): Note = Note(
         id = noteId,
@@ -27,7 +52,7 @@ class NoteRepository(
         return metadataMap[noteId]?.let { metadata ->
             Note.Metadata(
                 title = metadata.title,
-                tags = emptyList()
+                tags = emptyList() // TODO
             )
         } ?: Note.Metadata.default
     }
@@ -36,27 +61,16 @@ class NoteRepository(
     suspend fun getSourceCode(noteId: Note.Id): SourceCode =
         SourceCode(fileManager.readText(noteId.toFilePath()))
 
-    suspend fun write(noteId: Note.Id, content: String) {
-        fileManager.writeText(noteId.toFilePath(), content)
-    }
+    private fun String.removeTypExtension(): String = this.dropLast(4)
 
-    suspend fun makeNew() {
-        recover({
-            counter.increment()
-            val newNoteId = counter.now()
-            fileManager.makeFile(newNoteId.toFilePath())
-        }) { e ->
-            throw IOException(e.message)
-        }
-    }
-
-    private fun Note.Id.toFilePath(): String = "$CONTENT_DIR_NAME/${this.toFileName()}"
+    /* -- Update -- */
 
     context(_: Raise<Err>)
     suspend fun changeTitle(
         noteId: Note.Id,
-        title: Note.Title
+        inputTitle: Note.Title
     ) {
+        val title = if (inputTitle.isBlank()) null else inputTitle
         val metadataMap = fileManager.readNoteMetadataMap().toMutableMap()
         val currentNoteMetadata = metadataMap[noteId]
         metadataMap[noteId] = currentNoteMetadata?.copy(
@@ -67,6 +81,17 @@ class NoteRepository(
         )
         fileManager.writeNoteMetadataMap(metadataMap)
     }
+
+    suspend fun write(noteId: Note.Id, content: String) {
+        fileManager.writeText(noteId.toFilePath(), content)
+    }
+
+    /* -- Delete -- */
+
+
+    /* -- Helper methods -- */
+
+    private fun Note.Id.toFilePath(): String = "$CONTENT_DIR_NAME/${this.toFileName()}"
 
     private companion object {
         const val CONTENT_DIR_NAME = "content"

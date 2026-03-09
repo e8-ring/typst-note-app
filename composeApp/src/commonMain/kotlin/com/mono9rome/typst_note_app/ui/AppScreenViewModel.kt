@@ -93,12 +93,12 @@ class AppScreenViewModel(
 
     fun onTitleChange(
         noteId: Note.Id,
-        title: Note.Title
+        inputTitle: Note.Title
     ) = with(editorStateManager) {
-        _uiState.updateCurrentNoteTitle(noteId, title)
+        _uiState.updateCurrentNoteTitle(noteId, inputTitle)
         viewModelScope.launch {
             recover({
-                noteRepository.changeTitle(noteId, title)
+                noteRepository.changeTitle(noteId, inputTitle)
             }) { e ->
                 // TODO: エラーハンドリング
                 println("Error: ${e.message}")

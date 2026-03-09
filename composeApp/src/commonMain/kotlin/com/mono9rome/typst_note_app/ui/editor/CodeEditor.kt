@@ -43,6 +43,7 @@ fun CodeEditorUI(
     sourceCode: SourceCode,
     fontSizeSp: Float,
     onEdited: (SourceCode) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     // TextFieldValue を使用することでカーソル位置を保持できる
     var textFieldValue by remember {
@@ -162,8 +163,8 @@ fun CodeEditorUI(
             }
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxSize()
+            modifier = modifier
+                .fillMaxWidth()
                 .verticalScroll(verticalScrollState)
                 .padding(8.dp)
         ) {

@@ -18,8 +18,9 @@ class EditorStateManager {
 
     fun MainMutableStateFlow.updateCurrentNoteTitle(
         noteId: Note.Id,
-        title: Note.Title
+        inputTitle: Note.Title
     ) {
+        val title = if (inputTitle.isBlank()) null else inputTitle
         this.updateOpenNotes { list ->
             val openNotes = list.toMutableList()
             val currentNoteIndex = list.indexOfFirst { it.id == noteId }

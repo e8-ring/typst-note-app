@@ -53,6 +53,9 @@ fun EditorTabs(
             ) {
                 openNotes.forEach { note ->
                     val selected = note.id == currentNoteId
+                    val titleValue =
+                        if (note.title?.isBlank() ?: true) note.id.value
+                        else note.title.value
                     Tab(
                         selected = selected,
                         onClick = { onSelectNote(note.id) },
@@ -65,7 +68,7 @@ fun EditorTabs(
                                 horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
                                 Text(
-                                    text = note.title?.value ?: note.id.value,
+                                    text = titleValue,
                                     fontSize = 12.sp
                                 )
                                 Icon(

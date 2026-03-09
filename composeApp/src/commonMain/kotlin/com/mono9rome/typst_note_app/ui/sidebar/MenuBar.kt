@@ -20,9 +20,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 
+enum class MenuBarContentType {
+    None, AllList, Search, Tags, Settings
+}
+
 @Composable
 fun MenuBar(
-    openToolBar: (contentType: SidebarState) -> Unit,
+    openToolBar: (contentType: MenuBarContentType) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -33,22 +37,22 @@ fun MenuBar(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         ToolButton(
-            onClick = { openToolBar(SidebarState.AllList) },
+            onClick = { openToolBar(MenuBarContentType.AllList) },
             imageVector = Icons.Default.Menu,
             contentDescription = "ノート一覧"
         )
         ToolButton(
-            onClick = { openToolBar(SidebarState.Search) },
+            onClick = { openToolBar(MenuBarContentType.Search) },
             imageVector = Icons.Default.Search,
             contentDescription = "ノート検索"
         )
         ToolButton(
-            onClick = { openToolBar(SidebarState.Tags) },
+            onClick = { openToolBar(MenuBarContentType.Tags) },
             imageVector = Icons.Default.Tag,
             contentDescription = "タグ一覧"
         )
         ToolButton(
-            onClick = { openToolBar(SidebarState.Settings) },
+            onClick = { openToolBar(MenuBarContentType.Settings) },
             imageVector = Icons.Default.Settings,
             contentDescription = "設定"
         )

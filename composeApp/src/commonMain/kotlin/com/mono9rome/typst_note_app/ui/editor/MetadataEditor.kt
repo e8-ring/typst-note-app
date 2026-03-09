@@ -2,17 +2,16 @@ package com.mono9rome.typst_note_app.ui.editor
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mono9rome.typst_note_app.model.Note
+import com.mono9rome.typst_note_app.ui.component.SimpleTextField
 
 @Composable
 fun MetadataEditor(
@@ -34,55 +33,49 @@ fun MetadataEditor(
         ) {
             Text(
                 text = currentNoteId.value,
-                modifier = Modifier.padding(horizontal = 8.dp),
-                fontSize = 8.sp,
+                modifier = Modifier
+                    .padding(horizontal = 8.dp),
+                fontSize = 10.sp,
             )
             Spacer(modifier = Modifier.width(8.dp))
-            TitleEditField(
+            SimpleTextField(
                 enteredText = enteredText,
                 onValueChange = {
                     onTitleChange(currentNoteId, Note.Title(it))
                 },
                 modifier = Modifier.weight(1f),
+                placeholderText = "title..."
             )
         }
     }
 }
 
+@Preview(
+    widthDp = 500,
+    heightDp = 500,
+    showBackground = true,
+)
 @Composable
-fun TitleEditField(
-    enteredText: String,
-    onValueChange: (String) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    BasicTextField(
-        value = enteredText,
-        onValueChange = onValueChange,
-        singleLine = true,
-        modifier = modifier
-            .height(20.dp)
-            .background(
-                color = Color.LightGray,
-                shape = RoundedCornerShape(8.dp)
-            ),
-        textStyle = TextStyle(
-            fontSize = 10.sp,
-        ),
-        decorationBox = { innerTextField ->
-            Box(
-                contentAlignment = Alignment.CenterStart,
-                modifier = Modifier
-                    .padding(horizontal = 12.dp)
-            ) {
-                if (enteredText.isBlank()) {
-                    Text(
-                        text = "title...",
-                        color = Color.Gray,
-                        fontSize = 10.sp
-                    )
-                }
-                innerTextField()
-            }
+fun MetadataEditorPreview() {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.LightGray),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Box(
+            modifier = Modifier.size(300.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            MetadataEditor(
+                currentNoteId = Note.Id("0000"),
+                currentMetadata = Note.Metadata(
+                    title = Note.Title("monoid.def"),
+                    tags = emptyList()
+                ),
+                onTitleChange = { _, _ -> }
+            )
         }
-    )
+    }
 }

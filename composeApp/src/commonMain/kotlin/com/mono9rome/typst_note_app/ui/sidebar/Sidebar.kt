@@ -2,33 +2,33 @@ package com.mono9rome.typst_note_app.ui.sidebar
 
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.mono9rome.typst_note_app.LocalAppComponent
 import com.mono9rome.typst_note_app.model.Note
-
-enum class SidebarState {
-    None, AllList, Search, Tags, Settings
-}
+import com.mono9rome.typst_note_app.ui.sidebar.content.NoteChooser
+import com.mono9rome.typst_note_app.ui.sidebar.content.NoteSearch
 
 @Composable
 fun Sidebar(
     onClickFile: (Note.Id) -> Unit,
 ) {
-    var sidebarState by remember { mutableStateOf(SidebarState.None) }
+    val viewModel = LocalAppComponent.current.let {
+        viewModel { it.sidebarViewModelProvider() }
+    }
+    val uiState by viewModel.uiState.collectAsState()
     SidebarContainer(
-        sidebarState = sidebarState,
+        menuBarContentType = uiState.menuBarState,
         menuBar = {
             MenuBar(
-                openToolBar = { contentType ->
-                    sidebarState = when (sidebarState) {
-                        contentType -> SidebarState.None
-                        else -> contentType
-                    }
-                }
+                openToolBar = viewModel::openMenuBarContent,
             )
         },
         content = { modifier ->
             SidebarContent(
-                sidebarState = sidebarState,
+                sidebarUiState = uiState,
                 onClickFile = onClickFile,
+                notesManager = viewModel.notesManager,
+                searchManager = viewModel.searchManager,
                 modifier = modifier
             )
         }
@@ -37,25 +37,34 @@ fun Sidebar(
 
 @Composable
 fun SidebarContent(
-    sidebarState: SidebarState,
+    sidebarUiState: SidebarViewModel.UiState,
     onClickFile: (Note.Id) -> Unit,
+    notesManager: SidebarViewModel.NotesManager,
+    searchManager: SidebarViewModel.SearchManager,
     modifier: Modifier = Modifier
 ) {
-    when (sidebarState) {
-        SidebarState.None -> {}
-        SidebarState.AllList -> {
+    val noteMediumList = sidebarUiState.noteList
+    val noteLightList = noteMediumList.map { it.toLight() }
+    when (sidebarUiState.menuBarState) {
+        MenuBarContentType.None -> {}
+        MenuBarContentType.AllList -> {
             NoteChooser(
+                noteLightList = noteLightList,
                 onClickFile = onClickFile,
+                notesManager = notesManager,
                 modifier = modifier
             )
         }
-        SidebarState.Search -> {
+        MenuBarContentType.Search -> {
+            NoteSearch(
+                searchManager = searchManager,
+                onClickFile = onClickFile,
+            )
+        }
+        MenuBarContentType.Tags -> {
 
         }
-        SidebarState.Tags -> {
-
-        }
-        SidebarState.Settings -> {
+        MenuBarContentType.Settings -> {
 
         }
     }
