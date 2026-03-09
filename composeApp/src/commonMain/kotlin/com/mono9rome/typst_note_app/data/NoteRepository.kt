@@ -2,6 +2,7 @@ package com.mono9rome.typst_note_app.data
 
 import arrow.core.raise.Raise
 import arrow.core.raise.recover
+import com.mono9rome.typst_note_app.core.Counter
 import com.mono9rome.typst_note_app.model.Err
 import com.mono9rome.typst_note_app.model.Note
 import com.mono9rome.typst_note_app.model.SourceCode

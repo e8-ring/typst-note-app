@@ -1,10 +1,12 @@
-package com.mono9rome.typst_note_app.parser
+package com.mono9rome.typst_note_app.core.parser
 
 import arrow.core.raise.Raise
 import com.mono9rome.typst_note_app.FontSizeProvider
 import com.mono9rome.typst_note_app.model.*
-import com.mono9rome.typst_note_app.render.MathRenderer
+import com.mono9rome.typst_note_app.core.renderer.MathRenderer
 import me.tatarka.inject.annotations.Inject
+import java.lang.StringBuilder
+import kotlin.text.iterator
 
 @Inject
 class TextParser(
@@ -40,9 +42,9 @@ class TextParser(
         var insideAsterisk = false
 
         // * 外の文字をためておくバッファ
-        val currentPlainExtracted = java.lang.StringBuilder()
+        val currentPlainExtracted = StringBuilder()
         // 抽出中の * 内の文字をためておくバッファ
-        val currentBoldExtracted = java.lang.StringBuilder()
+        val currentBoldExtracted = StringBuilder()
 
         for (c in text) {
             when (c) {

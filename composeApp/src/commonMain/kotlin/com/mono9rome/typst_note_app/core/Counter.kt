@@ -1,8 +1,9 @@
-package com.mono9rome.typst_note_app.data
+package com.mono9rome.typst_note_app.core
 
 import arrow.core.raise.Raise
 import arrow.core.raise.context.ensure
 import arrow.core.raise.context.raise
+import com.mono9rome.typst_note_app.data.LocalFileManager
 import com.mono9rome.typst_note_app.model.Err
 import com.mono9rome.typst_note_app.model.Note
 import me.tatarka.inject.annotations.Inject

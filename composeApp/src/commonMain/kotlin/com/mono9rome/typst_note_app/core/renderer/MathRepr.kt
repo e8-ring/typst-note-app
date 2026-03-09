@@ -1,4 +1,4 @@
-package com.mono9rome.typst_note_app.render
+package com.mono9rome.typst_note_app.core.renderer
 
 data class MathRepr(val content: ByteArray) {
     override fun equals(other: Any?): Boolean {

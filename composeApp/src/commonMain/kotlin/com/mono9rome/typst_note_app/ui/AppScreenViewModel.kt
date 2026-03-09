@@ -7,7 +7,7 @@ import com.mono9rome.typst_note_app.data.NoteRepository
 import com.mono9rome.typst_note_app.model.ContentBlock
 import com.mono9rome.typst_note_app.model.Note
 import com.mono9rome.typst_note_app.model.SourceCode
-import com.mono9rome.typst_note_app.parser.BlockParser
+import com.mono9rome.typst_note_app.core.parser.BlockParser
 import com.mono9rome.typst_note_app.ui.state.EditorStateManager
 import com.mono9rome.typst_note_app.ui.state.MainUiState
 import kotlinx.coroutines.flow.MutableStateFlow

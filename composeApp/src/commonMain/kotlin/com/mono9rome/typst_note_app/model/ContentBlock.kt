@@ -1,6 +1,6 @@
 package com.mono9rome.typst_note_app.model
 
-import com.mono9rome.typst_note_app.render.MathRepr
+import com.mono9rome.typst_note_app.core.renderer.MathRepr
 import java.util.UUID
 
 

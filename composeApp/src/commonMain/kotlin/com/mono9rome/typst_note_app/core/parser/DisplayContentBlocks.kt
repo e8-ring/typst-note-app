@@ -1,4 +1,4 @@
-package com.mono9rome.typst_note_app.parser
+package com.mono9rome.typst_note_app.core.parser
 
 import com.mono9rome.typst_note_app.model.*
 
@@ -26,7 +26,7 @@ fun printContentBlocks(blocks: List<ContentBlock>, indent: String = "") {
                             )
 
                             is InlineMath -> println("$indent  InlineMath: \"(...)\"")
-                            is LinkToNote -> println("$indent LinkToNote: ${inlineElement.noteId.value}")
+                            is LinkToNote -> println("$indent  LinkToNote: ${inlineElement.noteId.value}")
                         }
                     }
                 }

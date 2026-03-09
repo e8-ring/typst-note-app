@@ -161,7 +161,7 @@ val generateUniFFIBindings by tasks.registering(Exec::class) {
         "--language",
         "kotlin",
         "--out-dir",
-        "../composeApp/src/commonMain/kotlin/com/mono9rome/typst_note_app"
+        "../composeApp/src/commonMain/kotlin/com/mono9rome/typst_note_app/core"
     )
 }
 

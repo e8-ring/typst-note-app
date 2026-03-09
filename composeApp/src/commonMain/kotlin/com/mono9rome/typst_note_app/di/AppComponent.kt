@@ -1,8 +1,8 @@
 package com.mono9rome.typst_note_app.di
 
 import com.mono9rome.typst_note_app.data.LocalFileManager
-import com.mono9rome.typst_note_app.render.MathRenderer
-import com.mono9rome.typst_note_app.render.RustMathRenderer
+import com.mono9rome.typst_note_app.core.renderer.MathRenderer
+import com.mono9rome.typst_note_app.core.renderer.RustMathRenderer
 import com.mono9rome.typst_note_app.ui.AppScreenViewModel
 import com.mono9rome.typst_note_app.ui.sidebar.NoteChooserViewModel
 import com.mono9rome.typst_note_app.ui.viewer.renderer.NestedContentRendererViewModel

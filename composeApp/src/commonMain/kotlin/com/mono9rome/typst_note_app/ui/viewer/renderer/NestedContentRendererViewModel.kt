@@ -5,7 +5,7 @@ import arrow.core.raise.recover
 import com.mono9rome.typst_note_app.data.NoteRepository
 import com.mono9rome.typst_note_app.model.ContentBlock
 import com.mono9rome.typst_note_app.model.Note
-import com.mono9rome.typst_note_app.parser.BlockParser
+import com.mono9rome.typst_note_app.core.parser.BlockParser
 import me.tatarka.inject.annotations.Inject
 
 @Inject
