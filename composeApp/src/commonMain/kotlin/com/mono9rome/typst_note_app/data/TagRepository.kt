@@ -11,8 +11,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import me.tatarka.inject.annotations.Inject
+import java.io.FileNotFoundException
 import java.io.IOException
-import kotlin.jvm.Throws
 
 @Inject
 class TagRepository(
@@ -44,11 +44,11 @@ class TagRepository(
     @Throws
     suspend fun getAll(): List<Note.Tag> = withContext(Dispatchers.IO) {
         val jsonString = recover( { fileManager.readText(TAG_LIST_FILE_NAME) }) { e ->
-            throw IOException("TagRepository.getAll: ${e.message}")
+            throw FileNotFoundException("TagRepository.getAll: ${e.message}")
         }
         if (jsonString.isBlank()) return@withContext emptyList()
         catch({ json.decodeFromString<List<Note.Tag>>(jsonString) }) { e ->
-            throw IOException("TagRepository.getAll: ${e.message}")
+            throw IOException("TagRepository.getAll: ${e.javaClass.simpleName} : ${e.message}")
         }
     }
 

@@ -20,7 +20,7 @@ import com.mono9rome.typst_note_app.ui.borderColor
 @Composable
 fun SearchableDropdownMenu(
     options: List<String>, // 候補となる全体のリスト
-    onOptionSelected: (String) -> Unit // 選択されたときのコールバック
+    onOptionSelected: (Int, String) -> Unit // 選択されたときのコールバック
 ) {
     // ドロップダウンが開いているかどうかの状態
     var expanded by remember { mutableStateOf(false) }
@@ -69,9 +69,9 @@ fun SearchableDropdownMenu(
                             .height(24.dp)
                             // クリック処理（リップルエフェクトも自動で付きます）
                             .clickable {
-                                inputText = selectionOption
+                                inputText = ""
                                 expanded = false
-                                onOptionSelected(selectionOption)
+                                onOptionSelected(index, selectionOption)
                             }
                             .padding(horizontal = 12.dp, vertical = 2.dp),
                         contentAlignment = Alignment.CenterStart

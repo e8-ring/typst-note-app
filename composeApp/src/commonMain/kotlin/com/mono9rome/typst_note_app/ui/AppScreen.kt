@@ -7,7 +7,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.mono9rome.typst_note_app.LocalAppComponent
-import com.mono9rome.typst_note_app.model.Note
 import com.mono9rome.typst_note_app.ui.component.ResizeHandle
 import com.mono9rome.typst_note_app.ui.editor.Editor
 import com.mono9rome.typst_note_app.ui.editor.EditorTabs
@@ -15,50 +14,28 @@ import com.mono9rome.typst_note_app.ui.sidebar.Sidebar
 import com.mono9rome.typst_note_app.ui.viewer.ContentViewer
 
 @Composable
-fun AppScreen(
-    modifier: Modifier = Modifier
-) {
+fun AppScreen(modifier: Modifier = Modifier) {
     val viewModel = LocalAppComponent.current.let {
         viewModel { it.appScreenViewModelProvider() }
     }
-    val uiState by viewModel.uiState.collectAsState()
+    val isSomeNoteFocused by viewModel.isSomeNoteFocused.collectAsState()
 
     AppScreenContainer(
-        currentNoteOrNull = uiState.editorState.currentNote,
+        isSomeNoteFocused = isSomeNoteFocused,
         sidebar = {
-            Sidebar(
-                onClickFile = viewModel::onSelectFileInChooser
-            )
+            Sidebar()
         },
-        mainContent = { currentNote ->
+        mainContent = {
             val totalWidthPx = constraints.maxWidth
             Column(modifier = Modifier.fillMaxSize()) {
-                EditorTabs(
-                    openNotes = uiState.editorState.openNotes,
-                    currentNoteId = currentNote.id,
-                    onSelectNote = viewModel::onSelectNoteInTabs,
-                    onCloseNote = viewModel::closeNote,
-                )
+                EditorTabs()
                 NoteContent(
                     totalWidthPx = totalWidthPx,
                     editor = { modifier ->
-                        Editor(
-                            currentNote = currentNote,
-                            fontSizeSp = uiState.fontSizeSp,
-                            onTitleChange = viewModel::onTitleChange,
-                            attachTag = viewModel::attachTag,
-                            deleteTag = viewModel::deleteTag,
-                            updateSourceCode = viewModel::onEdited,
-                            modifier = modifier
-                        )
+                        Editor(modifier = modifier)
                     },
                     viewer = { modifier ->
-                        ContentViewer(
-                            currentNoteId = currentNote.id,
-                            fontSizeSp = uiState.fontSizeSp,
-                            contentBlocks = uiState.currentRenderedContent,
-                            modifier = modifier
-                        )
+                        ContentViewer(modifier = modifier)
                     }
                 )
             }
@@ -69,18 +46,18 @@ fun AppScreen(
 
 @Composable
 fun AppScreenContainer(
-    currentNoteOrNull: Note?,
+    isSomeNoteFocused: Boolean,
     sidebar: @Composable RowScope.() -> Unit,
-    mainContent: @Composable BoxWithConstraintsScope.(currentNote: Note) -> Unit,
+    mainContent: @Composable BoxWithConstraintsScope.() -> Unit,
     modifier: Modifier = Modifier
 ) {
     Row(modifier = modifier.fillMaxSize()) {
         // 幅が可変なサイドバー
         sidebar()
         // メイン領域
-        if (currentNoteOrNull != null) {
+        if (isSomeNoteFocused) {
             BoxWithConstraints(modifier = Modifier.weight(1f).fillMaxHeight()) {
-                mainContent(currentNoteOrNull)
+                mainContent()
             }
         } else {
             Spacer(modifier = Modifier.weight(1f))

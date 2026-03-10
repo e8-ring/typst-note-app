@@ -1,11 +1,15 @@
 package com.mono9rome.typst_note_app.data
 
 import arrow.core.raise.Raise
+import arrow.core.raise.catch
 import arrow.core.raise.recover
 import com.mono9rome.typst_note_app.core.Counter
 import com.mono9rome.typst_note_app.model.Err
 import com.mono9rome.typst_note_app.model.Note
 import com.mono9rome.typst_note_app.model.SourceCode
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import kotlinx.serialization.json.Json
 import me.tatarka.inject.annotations.Inject
 import java.io.IOException
 
@@ -14,6 +18,8 @@ class NoteRepository(
     private val fileManager: LocalFileManager,
     private val counter: Counter
 ) {
+
+    private val json = Json { prettyPrint = true }
 
     /* -- Create -- */
 
@@ -29,15 +35,15 @@ class NoteRepository(
 
     /* -- Read -- */
 
-    context(_: Raise<Err>)
-    suspend fun getAllNotes(): List<Note.Medium> = fileManager.getAllNoteIds()
-        .map { fileName ->
-            val noteId = Note.Id(fileName.removeTypExtension())
-            Note.Medium(
-                id = noteId,
-                metadata = getMetadata(noteId),
-            )
-        }
+    suspend fun getAll(): List<Note.Medium> =
+        fileManager.getAllFileNamesInDir(CONTENT_DIR_NAME)
+            .map { fileName ->
+                val noteId = Note.Id(fileName.removeTypExtension())
+                Note.Medium(
+                    id = noteId,
+                    metadata = getMetadata(noteId),
+                )
+            }
 
     context(_: Raise<Err>)
     suspend fun get(noteId: Note.Id): Note = Note(
@@ -46,9 +52,8 @@ class NoteRepository(
         sourceCode = getSourceCode(noteId),
     )
 
-    context(_: Raise<Err>)
     suspend fun getMetadata(noteId: Note.Id): Note.Metadata {
-        val metadataMap = fileManager.readNoteMetadataMap()
+        val metadataMap = readNoteMetadataMap()
         return metadataMap[noteId] ?: Note.Metadata.default
     }
 
@@ -57,6 +62,17 @@ class NoteRepository(
         SourceCode(fileManager.readText(noteId.toFilePath()))
 
     private fun String.removeTypExtension(): String = this.dropLast(4)
+
+    @Throws
+    private suspend fun readNoteMetadataMap(): Note.MetaDataMap = withContext(Dispatchers.IO) {
+        val jsonString = recover({ fileManager.readText(NOTE_METADATA_MAP_FILE_NAME) }) { e ->
+            throw IOException("NoteRepository.readNoteMetadataMap: ${e.message}")
+        }
+        if (jsonString.isBlank()) return@withContext emptyMap()
+        catch({ json.decodeFromString<Note.MetaDataMap>(jsonString) }) { e ->
+            throw IOException("NoteRepository.readNoteMetadataMap: ${e.message}")
+        }
+    }
 
     /* -- Update -- */
 
@@ -77,23 +93,23 @@ class NoteRepository(
     context(_: Raise<Err>)
     suspend fun addTag(
         noteId: Note.Id,
-        tag: Note.Tag.Name,
+        tagId: Note.Tag.Id,
     ) = updateMetadata(noteId) {
         it?.copy(
-            tags = it.tags + listOf(tag)
+            tags = it.tags + listOf(tagId)
         ) ?: Note.Metadata(
             title = null,
-            tags = listOf(tag),
+            tags = listOf(tagId),
         )
     }
 
     context(_: Raise<Err>)
     suspend fun deleteTag(
         noteId: Note.Id,
-        tag: Note.Tag.Name,
+        tagId: Note.Tag.Id,
     ) = updateMetadata(noteId) {
         it?.copy(
-            tags = it.tags - listOf(tag).toSet()
+            tags = it.tags - listOf(tagId).toSet()
         ) ?: Note.Metadata.default
     }
 
@@ -102,10 +118,18 @@ class NoteRepository(
         noteId: Note.Id,
         update: (Note.Metadata?) -> Note.Metadata
     ) {
-        val metadataMap = fileManager.readNoteMetadataMap().toMutableMap()
+        val metadataMap = readNoteMetadataMap().toMutableMap()
         val currentNoteMetadataOrNull = metadataMap[noteId]
         metadataMap[noteId] = update(currentNoteMetadataOrNull)
-        fileManager.writeNoteMetadataMap(metadataMap)
+        writeNoteMetadataMap(metadataMap)
+    }
+
+    @Throws
+    private suspend fun writeNoteMetadataMap(metaDataMap: Note.MetaDataMap) = withContext(Dispatchers.IO) {
+        val jsonString = catch({ json.encodeToString(metaDataMap) }) { e ->
+            throw IOException("NoteRepository.writeNoteMetadataMap: ${e.message}:")
+        }
+        fileManager.writeText(NOTE_METADATA_MAP_FILE_NAME, jsonString)
     }
 
     suspend fun write(noteId: Note.Id, content: String) {
@@ -121,5 +145,6 @@ class NoteRepository(
 
     private companion object {
         const val CONTENT_DIR_NAME = "content"
+        const val NOTE_METADATA_MAP_FILE_NAME = "notes_metadata.json"
     }
 }

@@ -7,11 +7,15 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.mono9rome.typst_note_app.LocalAppComponent
 import com.mono9rome.typst_note_app.model.Note
 import com.mono9rome.typst_note_app.ui.activeTextColor
 import com.mono9rome.typst_note_app.ui.inactiveTextColor
@@ -21,11 +25,28 @@ const val tabsHeight = 24
 const val indicatorHeight = 2
 
 @Composable
-fun EditorTabs(
+fun EditorTabs(modifier: Modifier = Modifier) {
+    val viewModel = LocalAppComponent.current.let {
+        viewModel { it.editorTabsViewModelProvider() }
+    }
+    val uiState by viewModel.uiState.collectAsState()
+    if (uiState != null) {
+        EditorTabsBody(
+            openNotes = uiState!!.openTabs,
+            currentNoteId = uiState!!.focusedNoteId,
+            onSelectNote = viewModel::setFocus,
+            onCloseNote = viewModel::closeNote,
+            modifier = modifier
+        )
+    }
+}
+
+@Composable
+fun EditorTabsBody(
     openNotes: List<Note.Light>,
     currentNoteId: Note.Id,
     onSelectNote: (Note.Id) -> Unit,
-    onCloseNote: (note: Note.Light, isFocused: Boolean) -> Unit,
+    onCloseNote: (note: Note.Light) -> Unit,
     modifier: Modifier = Modifier
 ) {
     if (openNotes.isNotEmpty()) {
@@ -78,7 +99,7 @@ fun EditorTabs(
                                         .size(12.dp)
                                         .clip(CircleShape)
                                         .clickable(
-                                            onClick = { onCloseNote(note, selected) },
+                                            onClick = { onCloseNote(note) },
                                         )
                                 )
                             }

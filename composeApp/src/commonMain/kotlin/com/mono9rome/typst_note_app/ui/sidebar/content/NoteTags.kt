@@ -24,45 +24,47 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.mono9rome.typst_note_app.LocalAppComponent
 import com.mono9rome.typst_note_app.model.Note
 import com.mono9rome.typst_note_app.ui.component.SimpleTextField
 import com.mono9rome.typst_note_app.ui.editor.indicatorHeight
 import com.mono9rome.typst_note_app.ui.editor.tabsHeight
-import com.mono9rome.typst_note_app.ui.sidebar.SidebarViewModel
 import com.mono9rome.typst_note_app.ui.tabBackgroundColor
 
 @Composable
-fun NoteTags(
-    tagsManager: SidebarViewModel.TagsManager,
-    tagSearchManager: SidebarViewModel.SearchManager<Note.Tag>,
-) {
-    val tagSearchState by tagSearchManager.searchState.collectAsState()
+fun NoteTags(modifier: Modifier = Modifier) {
+    val viewModel = LocalAppComponent.current.let {
+        viewModel { it.noteTagsViewModelProvider() }
+    }
+    val uiState by viewModel.uiState.collectAsState()
     NoteTagsBody(
-        onAddNewTag = tagsManager::addNewTag,
-        onReload = tagsManager::refresh,
-        enteredText = tagSearchState.query,
-        onValueChange = tagSearchManager::run,
-        result = tagSearchState.result
+        query = uiState.query,
+        result = uiState.result,
+        onReload = viewModel::load,
+        onAddNewTag = viewModel::addNewTag,
+        onQueryChange = viewModel::runTagSearch,
+        modifier = modifier,
     )
 }
 
 @Composable
 fun NoteTagsBody(
-    onAddNewTag: (Note.Tag.Name) -> Unit,
-    onReload: () -> Unit,
-    enteredText: String,
-    onValueChange: (String) -> Unit,
+    query: String,
     result: List<Note.Tag>,
+    onQueryChange: (String) -> Unit,
+    onReload: () -> Unit,
+    onAddNewTag: (Note.Tag.Name) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier.fillMaxSize()) {
         TagTools(
-            onAddNewTag = onAddNewTag,
             onReload = onReload,
+            onAddNewTag = onAddNewTag,
         )
         SearchField(
-            enteredText = enteredText,
-            onValueChange = onValueChange,
+            query = query,
+            onQueryChange = onQueryChange,
             placeholderText = "search..."
         )
         HorizontalDivider(
@@ -83,8 +85,8 @@ fun NoteTagsBody(
 
 @Composable
 fun TagTools(
-    onAddNewTag: (Note.Tag.Name) -> Unit,
     onReload: () -> Unit,
+    onAddNewTag: (Note.Tag.Name) -> Unit,
     modifier: Modifier = Modifier
 ) {
     var enteredName by remember { mutableStateOf("") }

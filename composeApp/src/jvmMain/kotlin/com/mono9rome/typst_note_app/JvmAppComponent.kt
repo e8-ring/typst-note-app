@@ -2,11 +2,13 @@ package com.mono9rome.typst_note_app
 
 import com.mono9rome.typst_note_app.data.AppStorageDir
 import com.mono9rome.typst_note_app.di.AppComponent
+import com.mono9rome.typst_note_app.di.Singleton
 import me.tatarka.inject.annotations.Component
 import me.tatarka.inject.annotations.Provides
 import java.io.File
 
 @Component
+@Singleton
 abstract class JvmAppComponent : AppComponent() {
     @Provides
     fun provideAppStorageDir(): AppStorageDir {

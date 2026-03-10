@@ -11,7 +11,7 @@ import com.mono9rome.typst_note_app.ui.contentBackgroundColor
 
 @Composable
 fun SidebarContainer(
-    menuBarContentType: MenuBarContentType,
+    currentMenuBarContentType: MenuBarContentType,
     menuBar: @Composable RowScope.() -> Unit,
     content: @Composable BoxScope.(Modifier) -> Unit,
 ) {
@@ -24,7 +24,7 @@ fun SidebarContainer(
 
     Row {
         menuBar()
-        if (menuBarContentType != MenuBarContentType.None) {
+        if (currentMenuBarContentType != MenuBarContentType.None) {
             Row {
                 Box(
                     modifier = Modifier

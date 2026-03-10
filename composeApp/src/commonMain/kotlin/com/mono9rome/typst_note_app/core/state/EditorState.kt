@@ -1,15 +1,15 @@
-package com.mono9rome.typst_note_app.ui.state
+package com.mono9rome.typst_note_app.core.state
 
 import com.mono9rome.typst_note_app.model.Note
 
 data class EditorState(
     val openNotes: List<Note.Light>,
-    val currentNote: Note?
+    val focusedNote: Note?
 ) {
     companion object {
         val default = EditorState(
             openNotes = listOf(),
-            currentNote = null
+            focusedNote = null
         )
     }
 }

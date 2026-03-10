@@ -3,10 +3,12 @@ package com.mono9rome.typst_note_app
 import android.content.Context
 import com.mono9rome.typst_note_app.data.AppStorageDir
 import com.mono9rome.typst_note_app.di.AppComponent
+import com.mono9rome.typst_note_app.di.Singleton
 import me.tatarka.inject.annotations.Component
 import me.tatarka.inject.annotations.Provides
 
 @Component
+@Singleton
 abstract class AndroidAppComponent(
     @get:Provides val context: Context
 ) : AppComponent() {

@@ -1,24 +1,22 @@
 package com.mono9rome.typst_note_app.ui.sidebar
 
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.mono9rome.typst_note_app.LocalAppComponent
-import com.mono9rome.typst_note_app.model.Note
 import com.mono9rome.typst_note_app.ui.sidebar.content.NoteChooser
-import com.mono9rome.typst_note_app.ui.sidebar.content.NoteSearch
 import com.mono9rome.typst_note_app.ui.sidebar.content.NoteTags
 
 @Composable
-fun Sidebar(
-    onClickFile: (Note.Id) -> Unit,
-) {
+fun Sidebar() {
     val viewModel = LocalAppComponent.current.let {
         viewModel { it.sidebarViewModelProvider() }
     }
-    val uiState by viewModel.uiState.collectAsState()
+    val menuBarState by viewModel.menuBarState.collectAsState()
     SidebarContainer(
-        menuBarContentType = uiState.menuBarState,
+        currentMenuBarContentType = menuBarState,
         menuBar = {
             MenuBar(
                 openToolBar = viewModel::openMenuBarContent,
@@ -26,12 +24,7 @@ fun Sidebar(
         },
         content = { modifier ->
             SidebarContent(
-                sidebarUiState = uiState,
-                onClickFile = onClickFile,
-                notesManager = viewModel.notesManager,
-                noteSearchManager = viewModel.noteSearchManager,
-                tagsManager = viewModel.tagsManager,
-                tagSearchManager = viewModel.tagSearchManager,
+                currentMenuBarContentType = menuBarState,
                 modifier = modifier
             )
         }
@@ -40,37 +33,16 @@ fun Sidebar(
 
 @Composable
 fun SidebarContent(
-    sidebarUiState: SidebarViewModel.UiState,
-    onClickFile: (Note.Id) -> Unit,
-    notesManager: SidebarViewModel.NotesManager,
-    noteSearchManager: SidebarViewModel.SearchManager<Note.Medium>,
-    tagsManager: SidebarViewModel.TagsManager,
-    tagSearchManager: SidebarViewModel.SearchManager<Note.Tag>,
+    currentMenuBarContentType: MenuBarContentType,
     modifier: Modifier = Modifier
 ) {
-    val noteMediumList = sidebarUiState.noteList
-    val noteLightList = noteMediumList.map { it.toLight() }
-    when (sidebarUiState.menuBarState) {
+    when (currentMenuBarContentType) {
         MenuBarContentType.None -> {}
         MenuBarContentType.AllList -> {
-            NoteChooser(
-                noteLightList = noteLightList,
-                onClickFile = onClickFile,
-                notesManager = notesManager,
-                modifier = modifier
-            )
-        }
-        MenuBarContentType.Search -> {
-            NoteSearch(
-                noteSearchManager = noteSearchManager,
-                onClickFile = onClickFile,
-            )
+            NoteChooser(modifier = modifier)
         }
         MenuBarContentType.Tags -> {
-            NoteTags(
-                tagsManager = tagsManager,
-                tagSearchManager = tagSearchManager
-            )
+            NoteTags(modifier = modifier)
         }
         MenuBarContentType.Settings -> {
 

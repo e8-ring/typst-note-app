@@ -1,14 +1,9 @@
 package com.mono9rome.typst_note_app.ui.sidebar
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Tag
 import androidx.compose.material3.Icon
@@ -21,7 +16,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 
 enum class MenuBarContentType {
-    None, AllList, Search, Tags, Settings
+    None, AllList, Tags, Settings
 }
 
 @Composable
@@ -40,11 +35,6 @@ fun MenuBar(
             onClick = { openToolBar(MenuBarContentType.AllList) },
             imageVector = Icons.Default.Menu,
             contentDescription = "ノート一覧"
-        )
-        ToolButton(
-            onClick = { openToolBar(MenuBarContentType.Search) },
-            imageVector = Icons.Default.Search,
-            contentDescription = "ノート検索"
         )
         ToolButton(
             onClick = { openToolBar(MenuBarContentType.Tags) },

@@ -10,36 +10,44 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.mono9rome.typst_note_app.LocalAppComponent
 import com.mono9rome.typst_note_app.model.Note
+import com.mono9rome.typst_note_app.ui.component.SimpleTextField
 import com.mono9rome.typst_note_app.ui.editor.indicatorHeight
 import com.mono9rome.typst_note_app.ui.editor.tabsHeight
 import com.mono9rome.typst_note_app.ui.sidebar.FileItem
-import com.mono9rome.typst_note_app.ui.sidebar.SidebarViewModel
 import com.mono9rome.typst_note_app.ui.tabBackgroundColor
 
 @Composable
-fun NoteChooser(
-    noteLightList: List<Note.Light>,
-    onClickFile: (Note.Id) -> Unit,
-    notesManager: SidebarViewModel.NotesManager,
-    @Suppress("unused") modifier: Modifier = Modifier
-) {
+fun NoteChooser(modifier: Modifier = Modifier) {
+    val viewModel = LocalAppComponent.current.let {
+        viewModel { it.noteChooserViewModelProvider() }
+    }
+    val uiState by viewModel.uiState.collectAsState()
     NoteChooserBody(
-        notes = noteLightList,
-        onAddNewNote = notesManager::addNewNote,
-        onReload = notesManager::refresh,
-        onClickFile = onClickFile,
+        query = uiState.query,
+        notes = uiState.result.map { it.toLight() },
+        onAddNewNote = viewModel::addNewNote,
+        onReload = viewModel::load,
+        onQueryChange = viewModel::runNoteSearch,
+        onClickFile = viewModel::setFocusNote,
+        modifier = modifier,
     )
 }
 
 @Composable
 fun NoteChooserBody(
+    query: String,
     notes: List<Note.Light>,
     onAddNewNote: () -> Unit,
     onReload: () -> Unit,
+    onQueryChange: (String) -> Unit,
     onClickFile: (Note.Id) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -47,6 +55,11 @@ fun NoteChooserBody(
         ToolIcons(
             onAddNewNote = onAddNewNote,
             onReload = onReload
+        )
+        SearchField(
+            query = query,
+            onQueryChange = onQueryChange,
+            placeholderText = "search..."
         )
         HorizontalDivider(
             thickness = indicatorHeight.dp,
@@ -105,5 +118,32 @@ fun ToolIcons(
                 modifier = Modifier.size((rowHeight * 0.8).dp),
             )
         }
+    }
+}
+
+@Composable
+fun SearchField(
+    query: String,
+    onQueryChange: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    placeholderText: String = "",
+) {
+    val rowHeight = tabsHeight + 6
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(rowHeight.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        SimpleTextField(
+            enteredText = query,
+            onValueChange = onQueryChange,
+            modifier = Modifier
+                .padding(
+                    horizontal = 8.dp,
+                    vertical = 4.dp
+                ),
+            placeholderText = placeholderText
+        )
     }
 }

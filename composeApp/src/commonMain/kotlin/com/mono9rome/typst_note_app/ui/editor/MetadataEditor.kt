@@ -28,19 +28,37 @@ import com.mono9rome.typst_note_app.ui.component.SearchableDropdownMenu
 import com.mono9rome.typst_note_app.ui.component.SimpleTextField
 
 @Composable
-fun MetadataEditor(
-    currentNoteId: Note.Id,
-    currentMetadata: Note.Metadata,
-    onTitleChange: (Note.Id, Note.Title) -> Unit,
-    attachTag: (Note.Id, Note.Tag.Name) -> Unit,
-    deleteTag: (Note.Id, Note.Tag.Name) -> Unit,
-    modifier: Modifier = Modifier
-) {
+fun MetadataEditor(modifier: Modifier = Modifier) {
     val viewModel = LocalAppComponent.current.let {
         viewModel { it.metadataEditorViewModelProvider() }
     }
     val uiState by viewModel.uiState.collectAsState()
-    val enteredText = currentMetadata.title?.value ?: ""
+    val currentNote = uiState.currentNote
+    if (currentNote != null) {
+        MetadataEditorBody(
+            currentNoteId = currentNote.id,
+            currentNoteTitle = currentNote.metadata.title,
+            currentNoteTags = currentNote.metadata.tags.map(viewModel::getTagById),
+            allTags = uiState.allTags,
+            changeTitle = viewModel::changeTitle,
+            attachTag = viewModel::attachTag,
+            detachTag = viewModel::detachTag,
+            modifier = modifier
+        )
+    }
+}
+
+@Composable
+fun MetadataEditorBody(
+    currentNoteId: Note.Id,
+    currentNoteTitle: Note.Title?,
+    currentNoteTags: List<Note.Tag.Basic>,
+    allTags: List<Note.Tag.Basic>,
+    changeTitle: (Note.Title) -> Unit,
+    attachTag: (Note.Tag.Id) -> Unit,
+    detachTag: (Note.Tag.Id) -> Unit,
+    modifier: Modifier = Modifier
+) {
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -57,13 +75,10 @@ fun MetadataEditor(
                 fontSize = 10.sp,
             )
             Spacer(modifier = Modifier.width(8.dp))
-            SimpleTextField(
-                enteredText = enteredText,
-                onValueChange = {
-                    onTitleChange(currentNoteId, Note.Title(it))
-                },
+            TitleChanger(
+                currentNoteTitle = currentNoteTitle,
+                changeTitle = changeTitle,
                 modifier = Modifier.weight(1f),
-                placeholderText = "title..."
             )
         }
         Row(
@@ -71,10 +86,8 @@ fun MetadataEditor(
             verticalAlignment = Alignment.CenterVertically
         ) {
             NoteTagViewer(
-                currentTags = currentMetadata.tags,
-                onDeleteTag = {
-                    deleteTag(currentNoteId, it)
-                }
+                currentTags = currentNoteTags,
+                detachTag = detachTag,
             )
         }
         Row(
@@ -85,23 +98,35 @@ fun MetadataEditor(
                 text = "Add a tag: ",
                 fontSize = 10.sp,
             )
-            SearchableDropdownMenu(
-                options = uiState.tagNameList.map { it.value },
-                onOptionSelected = { tagNameValue ->
-                    val tagName = Note.Tag.Name(tagNameValue)
-                    if (!currentMetadata.tags.contains(tagName)) {
-                        attachTag(currentNoteId, tagName)
-                    }
-                }
+            TagSelector(
+                allTags = allTags,
+                currentNoteTags = currentNoteTags,
+                attachTag = attachTag,
             )
         }
     }
 }
 
 @Composable
+fun TitleChanger(
+    currentNoteTitle: Note.Title?,
+    changeTitle: (Note.Title) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    SimpleTextField(
+        enteredText = currentNoteTitle?.value ?: "",
+        onValueChange = {
+            changeTitle(Note.Title(it))
+        },
+        modifier = modifier,
+        placeholderText = "title..."
+    )
+}
+
+@Composable
 fun NoteTagViewer(
-    currentTags: List<Note.Tag.Name>,
-    onDeleteTag: (Note.Tag.Name) -> Unit,
+    currentTags: List<Note.Tag.Basic>,
+    detachTag: (Note.Tag.Id) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Row(modifier = modifier.fillMaxWidth()) {
@@ -111,7 +136,7 @@ fun NoteTagViewer(
         )
         TagsList(
             currentTags = currentTags,
-            onDeleteTag = onDeleteTag,
+            detachTag = detachTag,
             modifier = Modifier.weight(1f),
         )
     }
@@ -119,12 +144,12 @@ fun NoteTagViewer(
 
 @Composable
 fun TagsList(
-    currentTags: List<Note.Tag.Name>,
-    onDeleteTag: (Note.Tag.Name) -> Unit,
+    currentTags: List<Note.Tag.Basic>,
+    detachTag: (Note.Tag.Id) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(modifier) {
-        currentTags.forEach { tagName ->
+        currentTags.forEach { tag ->
             Row(
                 modifier = Modifier
                     .padding(all = 2.dp)
@@ -136,26 +161,43 @@ fun TagsList(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = tagName.value,
+                    text = tag.name.value,
                     modifier = Modifier
                         .padding(horizontal = 8.dp),
                     fontSize = 10.sp,
                 )
                 Icon(
                     imageVector = Icons.Default.Close,
-                    contentDescription = "Delete ${tagName.value}",
+                    contentDescription = "Delete ${tag.name.value}",
                     modifier = Modifier
                         .padding(horizontal = 8.dp)
                         .size(12.dp)
                         .clip(CircleShape)
                         .clickable(
-                            onClick = { onDeleteTag(tagName) },
+                            onClick = { detachTag(tag.id) },
                         ),
                     tint = activeTextColor
                 )
             }
         }
     }
+}
+
+@Composable
+fun TagSelector(
+    allTags: List<Note.Tag.Basic>,
+    currentNoteTags: List<Note.Tag.Basic>,
+    attachTag: (Note.Tag.Id) -> Unit,
+) {
+    SearchableDropdownMenu(
+        options = allTags.map { it.name.value },
+        onOptionSelected = { index, _ ->
+            val tag = allTags[index]
+            if (!currentNoteTags.contains(tag)) {
+                attachTag(tag.id)
+            }
+        }
+    )
 }
 
 @Preview(
@@ -176,16 +218,7 @@ fun MetadataEditorPreview() {
             modifier = Modifier.size(300.dp),
             contentAlignment = Alignment.Center
         ) {
-            MetadataEditor(
-                currentNoteId = Note.Id("0000"),
-                currentMetadata = Note.Metadata(
-                    title = Note.Title("monoid.def"),
-                    tags = emptyList()
-                ),
-                onTitleChange = { _, _ -> },
-                attachTag = { _, _ -> },
-                deleteTag = { _, _ -> },
-            )
+            MetadataEditor()
         }
     }
 }
