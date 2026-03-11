@@ -120,6 +120,14 @@ class NoteRepository(
     }
 
     context(_: Raise<Err>)
+    suspend fun updateLatestUpdatedDate(noteId: Note.Id) =
+        updateMetadata(noteId) {
+            it?.copy(
+                lastUpdatedDate = Note.Timestamp.now()
+            ) ?: Note.Metadata.default
+        }
+
+    context(_: Raise<Err>)
     private suspend fun updateMetadata(
         noteId: Note.Id,
         update: (Note.Metadata?) -> Note.Metadata

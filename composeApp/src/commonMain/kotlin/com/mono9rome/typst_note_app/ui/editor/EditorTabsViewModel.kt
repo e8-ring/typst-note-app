@@ -3,6 +3,7 @@ package com.mono9rome.typst_note_app.ui.editor
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mono9rome.typst_note_app.core.state.EditorStateManager
+import com.mono9rome.typst_note_app.core.state.ViewerStateManager
 import com.mono9rome.typst_note_app.model.Note
 import com.mono9rome.typst_note_app.util.mapState
 import kotlinx.coroutines.flow.StateFlow
@@ -11,7 +12,8 @@ import me.tatarka.inject.annotations.Inject
 
 @Inject
 class EditorTabsViewModel(
-    private val editorStateManager: EditorStateManager
+    private val editorStateManager: EditorStateManager,
+    private val viewerStateManager: ViewerStateManager,
 ) : ViewModel() {
 
     data class UiState(
@@ -30,7 +32,10 @@ class EditorTabsViewModel(
         }
 
     fun setFocus(noteId: Note.Id) {
-        viewModelScope.launch { editorStateManager.setFocus(noteId) }
+        viewModelScope.launch {
+            editorStateManager.setFocus(noteId)
+            viewerStateManager.render()
+        }
     }
 
     fun closeNote(note: Note.Light) {

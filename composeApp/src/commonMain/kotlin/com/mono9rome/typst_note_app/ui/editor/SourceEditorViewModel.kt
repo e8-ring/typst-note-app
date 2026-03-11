@@ -38,6 +38,7 @@ class SourceEditorViewModel(
     fun updateSourceCode(source: Note.Source) {
         viewModelScope.launch {
             editorStateManager.updateFocusedNoteSourceCode(source)
+            editorStateManager.updateLatestUpdatedDate()
             viewerStateManager.render()
         }
     }

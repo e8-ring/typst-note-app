@@ -1,4 +1,4 @@
-package com.mono9rome.typst_note_app.ui.editor
+package com.mono9rome.typst_note_app.ui.editor.metadata
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -43,7 +43,7 @@ class MetadataEditorViewModel(
         )
     }.stateIn(
         scope = viewModelScope,
-        started = SharingStarted.Eagerly,
+        started = SharingStarted.WhileSubscribed(5000),
         initialValue = UiState.default
     )
 

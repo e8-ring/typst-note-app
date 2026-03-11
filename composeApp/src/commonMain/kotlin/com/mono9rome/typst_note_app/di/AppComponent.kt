@@ -5,7 +5,7 @@ import com.mono9rome.typst_note_app.core.renderer.RustMathRenderer
 import com.mono9rome.typst_note_app.data.LocalFileManager
 import com.mono9rome.typst_note_app.ui.AppScreenViewModel
 import com.mono9rome.typst_note_app.ui.editor.EditorTabsViewModel
-import com.mono9rome.typst_note_app.ui.editor.MetadataEditorViewModel
+import com.mono9rome.typst_note_app.ui.editor.metadata.MetadataEditorViewModel
 import com.mono9rome.typst_note_app.ui.editor.SourceEditorViewModel
 import com.mono9rome.typst_note_app.ui.sidebar.SidebarViewModel
 import com.mono9rome.typst_note_app.ui.sidebar.content.NoteChooserViewModel

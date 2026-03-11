@@ -1,12 +1,8 @@
 package com.mono9rome.typst_note_app.ui.sidebar.content
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.*
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Refresh
@@ -19,6 +15,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -79,18 +76,11 @@ fun NoteTagsBody(
             thickness = indicatorHeight.dp,
             color = tabBackgroundColor
         )
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f)
-        ) {
-            items(result) { tag ->
-                TagItem(
-                    tag = tag,
-                    renameTag = renameTag,
-                )
-            }
-        }
+        TagList(
+            result = result,
+            renameTag = renameTag,
+            modifier = Modifier.weight(1f),
+        )
     }
 }
 
@@ -119,7 +109,10 @@ fun TagTools(
         )
         val iconSize = (rowHeight * 0.8)
         IconButton(
-            onClick = { onAddNewTag(Note.Tag.Name(enteredName)) },
+            onClick = {
+                if (enteredName.isBlank()) return@IconButton
+                onAddNewTag(Note.Tag.Name(enteredName))
+            },
             modifier = Modifier
                 .size(iconSize.dp)
                 .padding(horizontal = 4.dp)
@@ -146,14 +139,50 @@ fun TagTools(
 }
 
 @Composable
+fun TagList(
+    result: List<Note.Tag>,
+    renameTag: (Note.Tag.Id, String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    // スクロール状態の保持
+    val verticalScrollState = rememberScrollState()
+    val horizontalScrollState = rememberScrollState()
+    BoxWithConstraints(modifier = modifier.fillMaxSize()) {
+        val viewPortWidth = maxWidth
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(verticalScrollState)
+                .horizontalScroll(horizontalScrollState)
+        ) {
+            Column(
+                modifier = Modifier
+                    .widthIn(min = viewPortWidth)
+                    .width(IntrinsicSize.Max),
+            ) {
+                result.forEach { tag ->
+                    TagItem(
+                        tag = tag,
+                        renameTag = renameTag,
+                        viewPortWidth = viewPortWidth,
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
 fun TagItem(
     tag: Note.Tag,
     renameTag: (Note.Tag.Id, String) -> Unit,
+    viewPortWidth: Dp,
+    modifier: Modifier = Modifier
 ) {
     var expanded by remember { mutableStateOf(false) }
     if (expanded) {
         Column(
-            modifier = Modifier
+            modifier = modifier
                 .fillMaxWidth()
                 .background(Color.LightGray.copy(alpha = 0.3f))
                 .border(1.dp, Color.LightGray)
@@ -181,7 +210,8 @@ fun TagItem(
                     if (enteredName.isNotBlank()) {
                         renameTag(tagId, enteredName)
                     }
-                }
+                },
+                modifier = Modifier.width(viewPortWidth)
             )
         }
     } else {

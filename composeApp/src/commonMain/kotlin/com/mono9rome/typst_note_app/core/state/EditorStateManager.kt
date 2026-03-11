@@ -100,6 +100,24 @@ class EditorStateManager(
         updateFocusedNoteTags { it - tagId }
     }
 
+    suspend fun updateLatestUpdatedDate() {
+        checkFocusedNow()
+        val focusedNoteId = editorState.value.focusedNote!!.id
+
+        // 最初にローカルデータを編集
+        recover({ noteRepository.updateLatestUpdatedDate(focusedNoteId) }) { _ ->
+            // TODO: ローカルデータ更新失敗時のエラーハンドリング
+            // 整合性のため終了
+            return
+        }
+        // 次にメモリデータに反映（注意：ローカルデータと厳密にはズレる）
+        updateFocusedNoteMetadata {
+            it.copy(
+                lastUpdatedDate = Note.Timestamp.now()
+            )
+        }
+    }
+
     suspend fun updateFocusedNoteSourceCode(source: Note.Source) {
         checkFocusedNow()
 
@@ -176,11 +194,9 @@ class EditorStateManager(
     }
 
     private fun updateFocusedNoteTags(update: (List<Note.Tag.Id>) -> List<Note.Tag.Id>) =
-        updateFocusedNote {
-            it?.copy(
-                metadata = it.metadata.copy(
-                    tags = update(it.metadata.tags)
-                )
+        updateFocusedNoteMetadata {
+            it.copy(
+                tags = update(it.tags)
             )
         }
 
@@ -200,6 +216,13 @@ class EditorStateManager(
             )
         }
     }
+
+    private fun updateFocusedNoteMetadata(updateMetadata: (Note.Metadata) -> Note.Metadata) =
+        updateFocusedNote {
+            it?.copy(
+                metadata = updateMetadata(it.metadata)
+            )
+        }
 
     private fun updateOpenNotes(updateNotes: (List<Note.Light>) -> List<Note.Light>) {
         _editorState.update {

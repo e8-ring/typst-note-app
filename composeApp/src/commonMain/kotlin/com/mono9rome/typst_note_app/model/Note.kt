@@ -37,7 +37,7 @@ data class Note(
         val title: Title?,
         val tags: List<Tag.Id>,
         val createdDate: Timestamp = Timestamp.now(),
-        val lastUpdatedDate: Timestamp? = null
+        val lastUpdatedDate: Timestamp = Timestamp.now(),
     ) {
         companion object {
             val default = Metadata(

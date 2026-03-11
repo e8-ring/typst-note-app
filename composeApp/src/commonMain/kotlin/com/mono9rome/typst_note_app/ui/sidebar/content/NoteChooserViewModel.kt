@@ -6,6 +6,7 @@ import com.mono9rome.typst_note_app.core.Search
 import com.mono9rome.typst_note_app.core.state.EditorStateManager
 import com.mono9rome.typst_note_app.core.state.NoteStateManager
 import com.mono9rome.typst_note_app.core.state.SearchStateManager
+import com.mono9rome.typst_note_app.core.state.ViewerStateManager
 import com.mono9rome.typst_note_app.model.Note
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -15,6 +16,7 @@ import me.tatarka.inject.annotations.Inject
 class NoteChooserViewModel(
     private val noteStateManager: NoteStateManager,
     private val editorStateManager: EditorStateManager,
+    private val viewerStateManager: ViewerStateManager,
     searchStateManager: SearchStateManager,
     search: Search
 ) : ViewModel() {
@@ -46,6 +48,9 @@ class NoteChooserViewModel(
     }
 
     fun setFocusNote(noteId: Note.Id) {
-        viewModelScope.launch { editorStateManager.setFocus(noteId) }
+        viewModelScope.launch {
+            editorStateManager.setFocus(noteId)
+            viewerStateManager.render()
+        }
     }
 }
