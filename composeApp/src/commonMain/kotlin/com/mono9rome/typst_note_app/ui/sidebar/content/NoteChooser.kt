@@ -4,24 +4,23 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.InsertDriveFile
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.mono9rome.typst_note_app.LocalAppComponent
 import com.mono9rome.typst_note_app.model.Note
+import com.mono9rome.typst_note_app.ui.component.SimpleListItem
 import com.mono9rome.typst_note_app.ui.component.SimpleTextField
 import com.mono9rome.typst_note_app.ui.editor.indicatorHeight
 import com.mono9rome.typst_note_app.ui.editor.tabsHeight
-import com.mono9rome.typst_note_app.ui.sidebar.FileItem
 import com.mono9rome.typst_note_app.ui.tabBackgroundColor
 
 @Composable
@@ -30,12 +29,18 @@ fun NoteChooser(modifier: Modifier = Modifier) {
         viewModel { it.noteChooserViewModelProvider() }
     }
     val uiState by viewModel.uiState.collectAsState()
+    var enteredText by remember { mutableStateOf("") }
     NoteChooserBody(
-        query = uiState.query,
-        notes = uiState.result.map { it.toLight() },
+        enteredText = enteredText,
+        notes = uiState.map { it.toLight() },
         onAddNewNote = viewModel::addNewNote,
         onReload = viewModel::load,
-        onQueryChange = viewModel::runNoteSearch,
+        onQueryChange = { query ->
+            // UI への反映
+            enteredText = query
+            // 処理
+            viewModel.runNoteSearch(enteredText)
+        },
         onClickFile = viewModel::setFocusNote,
         modifier = modifier,
     )
@@ -43,7 +48,7 @@ fun NoteChooser(modifier: Modifier = Modifier) {
 
 @Composable
 fun NoteChooserBody(
-    query: String,
+    enteredText: String,
     notes: List<Note.Light>,
     onAddNewNote: () -> Unit,
     onReload: () -> Unit,
@@ -57,11 +62,12 @@ fun NoteChooserBody(
             onReload = onReload
         )
         SearchField(
-            query = query,
+            enteredText = enteredText,
             onQueryChange = onQueryChange,
             placeholderText = "search..."
         )
         HorizontalDivider(
+            modifier = Modifier.padding(bottom = 2.dp),
             thickness = indicatorHeight.dp,
             color = tabBackgroundColor
         )
@@ -71,9 +77,12 @@ fun NoteChooserBody(
                 .weight(1f)
         ) {
             items(notes) { note ->
-                FileItem(
-                    noteMetadata = note,
-                    onClick = onClickFile
+                SimpleListItem(
+                    itemText = if (note.title != null) note.title.value else note.id.value,
+                    fontSizeSp = 12f,
+                    iconImageVector = Icons.AutoMirrored.Filled.InsertDriveFile,
+                    iconContentDescription = "File Icon",
+                    onClick = { onClickFile(note.id) },
                 )
             }
         }
@@ -123,7 +132,7 @@ fun ToolIcons(
 
 @Composable
 fun SearchField(
-    query: String,
+    enteredText: String,
     onQueryChange: (String) -> Unit,
     modifier: Modifier = Modifier,
     placeholderText: String = "",
@@ -136,7 +145,7 @@ fun SearchField(
         contentAlignment = Alignment.Center
     ) {
         SimpleTextField(
-            enteredText = query,
+            enteredText = enteredText,
             onValueChange = onQueryChange,
             modifier = Modifier
                 .padding(

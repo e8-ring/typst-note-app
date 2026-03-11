@@ -27,7 +27,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mono9rome.typst_note_app.model.Note
-import com.mono9rome.typst_note_app.model.SourceCode
 import com.mono9rome.typst_note_app.ui.activeTextColor
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -40,14 +39,14 @@ private val activeLineColor = Color(0x1A0000FF) // 透明度を持たせた青
 @Composable
 fun SourceEditorBody(
     currentNoteId: Note.Id,
-    sourceCode: SourceCode,
+    source: Note.Source,
     fontSizeSp: Float,
-    onEdited: (SourceCode) -> Unit,
+    onEdited: (Note.Source) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     // TextFieldValue を使用することでカーソル位置を保持できる
     var textFieldValue by remember {
-        mutableStateOf(TextFieldValue(sourceCode.value))
+        mutableStateOf(TextFieldValue(source.value))
     }
     // テキストのレイアウト結果（高さや各行の座標情報）を保持する
     var textLayoutResult by remember { mutableStateOf<TextLayoutResult?>(null) }
@@ -80,7 +79,7 @@ fun SourceEditorBody(
 
     // currentNoteId が更新されるたびに textFieldValue 状態を更新する
     LaunchedEffect(currentNoteId) {
-        textFieldValue = TextFieldValue(sourceCode.value)
+        textFieldValue = TextFieldValue(source.value)
     }
     // カーソル位置（selection）が変更されるたびに発火する監視ロジック
     LaunchedEffect(textFieldValue.selection) {
@@ -242,7 +241,7 @@ fun SourceEditorBody(
                 value = textFieldValue, // 入力とカーソル移動のデータ
                 onValueChange = {
                     textFieldValue = it // テキスト更新後にカーソル更新
-                    onEdited(SourceCode(it.text))
+                    onEdited(Note.Source(it.text))
                 },
                 textStyle = editorTextStyle,
                 onTextLayout = { layoutResult ->
@@ -289,7 +288,7 @@ fun SourceEditorBody(
 fun CodeEditorPreview() {
     SourceEditorBody(
         currentNoteId = Note.Id("0000"),
-        sourceCode = SourceCode("android"),
+        source = Note.Source("android"),
         fontSizeSp = 14f,
         onEdited = {},
     )

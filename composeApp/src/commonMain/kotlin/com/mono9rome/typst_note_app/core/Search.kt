@@ -14,7 +14,7 @@ class Search {
         list: List<T>,
         query: String,
         filter: Filter<T>,
-    ): List<T> = withContext(Dispatchers.IO) {
+    ): List<T> = withContext(Dispatchers.Default) {
         if (query.isBlank()) return@withContext list
 
         val keywords = query.split(" ")

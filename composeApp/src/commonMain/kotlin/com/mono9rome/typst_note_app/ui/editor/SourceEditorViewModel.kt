@@ -6,7 +6,6 @@ import com.mono9rome.typst_note_app.FontSizeProvider
 import com.mono9rome.typst_note_app.core.state.EditorStateManager
 import com.mono9rome.typst_note_app.core.state.ViewerStateManager
 import com.mono9rome.typst_note_app.model.Note
-import com.mono9rome.typst_note_app.model.SourceCode
 import com.mono9rome.typst_note_app.util.mapState
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -21,7 +20,7 @@ class SourceEditorViewModel(
 
     data class UiState(
         val currentNoteId: Note.Id,
-        val currentNoteSourceCode: SourceCode,
+        val currentNoteSource: Note.Source,
         val fontSizeSp: Float,
     )
 
@@ -30,15 +29,15 @@ class SourceEditorViewModel(
             editorState.focusedNote?.let { note ->
                 UiState(
                     currentNoteId = note.id,
-                    currentNoteSourceCode = note.sourceCode,
+                    currentNoteSource = note.source,
                     fontSizeSp = fontSizeProvider.current
                 )
             }
         }
 
-    fun updateSourceCode(sourceCode: SourceCode) {
+    fun updateSourceCode(source: Note.Source) {
         viewModelScope.launch {
-            editorStateManager.updateFocusedNoteSourceCode(sourceCode)
+            editorStateManager.updateFocusedNoteSourceCode(source)
             viewerStateManager.render()
         }
     }

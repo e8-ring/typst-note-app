@@ -5,14 +5,14 @@ import com.mono9rome.typst_note_app.model.*
 class SampleData {
     companion object {
 
-        val sourceCode = """
+        val source = """
             This is a test data.
             - This is a test item 1.
             - This is a test item 2:
               + This is a numbered item 1.
               + This is a numbered item 2.
             We can therefore ...
-        """.trimIndent().let(::SourceCode)
+        """.trimIndent().let(Note::Source)
 
         val contentBlocks = listOf(
             Paragraph(
@@ -105,6 +105,6 @@ class SampleData {
         )
 
         // デフォルト : 18f
-        val textSizeSp = 15f
+        const val TEXT_SIZE_SP = 15f
     }
 }

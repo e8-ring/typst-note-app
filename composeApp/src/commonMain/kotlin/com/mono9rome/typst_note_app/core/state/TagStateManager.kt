@@ -35,4 +35,9 @@ class TagStateManager(
         }
         loadAll()
     }
+
+    suspend fun renameTag(tagId: Note.Tag.Id, newName: String) {
+        tagRepository.renameTag(tagId, newName)
+        loadAll()
+    }
 }

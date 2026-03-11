@@ -39,6 +39,7 @@ fun MetadataEditor(modifier: Modifier = Modifier) {
             currentNoteId = currentNote.id,
             currentNoteTitle = currentNote.metadata.title,
             currentNoteTags = currentNote.metadata.tags.map(viewModel::getTagById),
+            currentNoteCreatedDate = currentNote.metadata.createdDate,
             allTags = uiState.allTags,
             changeTitle = viewModel::changeTitle,
             attachTag = viewModel::attachTag,
@@ -53,6 +54,7 @@ fun MetadataEditorBody(
     currentNoteId: Note.Id,
     currentNoteTitle: Note.Title?,
     currentNoteTags: List<Note.Tag.Basic>,
+    currentNoteCreatedDate: Note.Timestamp,
     allTags: List<Note.Tag.Basic>,
     changeTitle: (Note.Title) -> Unit,
     attachTag: (Note.Tag.Id) -> Unit,
@@ -79,6 +81,18 @@ fun MetadataEditorBody(
                 currentNoteTitle = currentNoteTitle,
                 changeTitle = changeTitle,
                 modifier = Modifier.weight(1f),
+            )
+            Text(
+                text = "created: ",
+                modifier = Modifier
+                    .padding(start = 8.dp),
+                fontSize = 10.sp,
+            )
+            Text(
+                text = currentNoteCreatedDate.format(Note.Timestamp.PATTERN_DAY_SLASHED),
+                modifier = Modifier
+                    .padding(end = 8.dp),
+                fontSize = 10.sp,
             )
         }
         Row(

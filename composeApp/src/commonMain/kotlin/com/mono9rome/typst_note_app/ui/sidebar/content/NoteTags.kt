@@ -1,5 +1,9 @@
 package com.mono9rome.typst_note_app.ui.sidebar.content
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -10,23 +14,18 @@ import androidx.compose.material.icons.filled.Tag
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.mono9rome.typst_note_app.LocalAppComponent
 import com.mono9rome.typst_note_app.model.Note
+import com.mono9rome.typst_note_app.ui.component.SimpleListItem
+import com.mono9rome.typst_note_app.ui.component.SimpleListItemBody
 import com.mono9rome.typst_note_app.ui.component.SimpleTextField
 import com.mono9rome.typst_note_app.ui.editor.indicatorHeight
 import com.mono9rome.typst_note_app.ui.editor.tabsHeight
@@ -38,23 +37,31 @@ fun NoteTags(modifier: Modifier = Modifier) {
         viewModel { it.noteTagsViewModelProvider() }
     }
     val uiState by viewModel.uiState.collectAsState()
+    var enteredText by remember { mutableStateOf("") }
     NoteTagsBody(
-        query = uiState.query,
-        result = uiState.result,
+        enteredText = enteredText,
+        result = uiState,
         onReload = viewModel::load,
         onAddNewTag = viewModel::addNewTag,
-        onQueryChange = viewModel::runTagSearch,
+        onQueryChange = { query ->
+            // UI への反映
+            enteredText = query
+            // 処理
+            viewModel.runTagSearch(enteredText)
+        },
+        renameTag = viewModel::renameTag,
         modifier = modifier,
     )
 }
 
 @Composable
 fun NoteTagsBody(
-    query: String,
+    enteredText: String,
     result: List<Note.Tag>,
     onQueryChange: (String) -> Unit,
     onReload: () -> Unit,
     onAddNewTag: (Note.Tag.Name) -> Unit,
+    renameTag: (Note.Tag.Id, String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier.fillMaxSize()) {
@@ -63,11 +70,12 @@ fun NoteTagsBody(
             onAddNewTag = onAddNewTag,
         )
         SearchField(
-            query = query,
+            enteredText = enteredText,
             onQueryChange = onQueryChange,
             placeholderText = "search..."
         )
         HorizontalDivider(
+            modifier = Modifier.padding(bottom = 2.dp),
             thickness = indicatorHeight.dp,
             color = tabBackgroundColor
         )
@@ -77,7 +85,10 @@ fun NoteTagsBody(
                 .weight(1f)
         ) {
             items(result) { tag ->
-                TagItem(tag)
+                TagItem(
+                    tag = tag,
+                    renameTag = renameTag,
+                )
             }
         }
     }
@@ -103,7 +114,8 @@ fun TagTools(
             onValueChange = { enteredName = it },
             modifier = Modifier
                 .weight(1f)
-                .padding(horizontal = 4.dp),
+                .padding(start = 8.dp, end = 4.dp),
+            placeholderText = "create a new tag..."
         )
         val iconSize = (rowHeight * 0.8)
         IconButton(
@@ -135,34 +147,75 @@ fun TagTools(
 
 @Composable
 fun TagItem(
-    tag: Note.Tag
+    tag: Note.Tag,
+    renameTag: (Note.Tag.Id, String) -> Unit,
 ) {
+    var expanded by remember { mutableStateOf(false) }
+    if (expanded) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(Color.LightGray.copy(alpha = 0.3f))
+                .border(1.dp, Color.LightGray)
+        ) {
+            val interactionSource = remember { MutableInteractionSource() }
+            SimpleListItemBody(
+                itemText = tag.name.value,
+                fontSizeSp = 12f,
+                iconImageVector = Icons.Default.Tag,
+                iconContentDescription = "File Icon",
+                modifier = Modifier
+                    .fillMaxWidth()
+                    // ホバーしても背景色を変えないように設定
+                    .clickable(
+                        interactionSource = interactionSource,
+                        indication = null,
+                        onClick = { expanded = false }
+                    )
+            )
+            TagNameChanger(
+                tagId = tag.id,
+                previousName = tag.name,
+                onConfirm = { tagId, enteredName ->
+                    expanded = false
+                    if (enteredName.isNotBlank()) {
+                        renameTag(tagId, enteredName)
+                    }
+                }
+            )
+        }
+    } else {
+        SimpleListItem(
+            itemText = tag.name.value,
+            fontSizeSp = 12f,
+            iconImageVector = Icons.Default.Tag,
+            iconContentDescription = "Tag Icon",
+            onClick = { expanded = true },
+        )
+    }
+}
+
+@Composable
+fun TagNameChanger(
+    tagId: Note.Tag.Id,
+    previousName: Note.Tag.Name,
+    onConfirm: (Note.Tag.Id, String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    var enteredName by remember { mutableStateOf(previousName.value) }
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 4.dp), // VSCodeっぽい適度な余白
+        modifier = modifier.padding(horizontal = 8.dp, vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // アイコン
-        Icon(
-            imageVector = Icons.Default.Tag,
-            contentDescription = "Tag Icon",
-            modifier = Modifier
-                .size(12.dp),
-            tint = Color.Gray
-        )
-        Spacer(modifier = Modifier.width(8.dp))
-        // ファイル名
         Text(
-            text = tag.name.value,
-            style = LocalTextStyle.current.copy(
-                fontSize = 12.sp,
-                lineHeight = 12.sp,
-                lineHeightStyle = LineHeightStyle(
-                    alignment = LineHeightStyle.Alignment.Center,
-                    trim = LineHeightStyle.Trim.Both
-                )
-            )
+            text = "new name: ",
+            fontSize = 10.sp,
+        )
+        SimpleTextField(
+            enteredText = enteredName,
+            onValueChange = { enteredName = it },
+            onEnter = { onConfirm(tagId, enteredName) },
+            onLeave = { onConfirm(tagId, enteredName) },
         )
     }
 }

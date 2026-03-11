@@ -4,7 +4,7 @@ import arrow.core.raise.recover
 import com.mono9rome.typst_note_app.core.parser.BlockParser
 import com.mono9rome.typst_note_app.di.Singleton
 import com.mono9rome.typst_note_app.model.ContentBlock
-import com.mono9rome.typst_note_app.model.SourceCode
+import com.mono9rome.typst_note_app.model.Note
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -26,11 +26,11 @@ class ViewerStateManager(
      * */
     suspend fun render() =
         editorStateManager.editorState.value.focusedNote?.let { note ->
-            update(note.sourceCode)
+            update(note.source)
         }
 
-    private suspend fun update(sourceCode: SourceCode) {
-        val contentBlocks = recover({ blockParser.parse(sourceCode.value) }) { null }
+    private suspend fun update(source: Note.Source) {
+        val contentBlocks = recover({ blockParser.parse(source.value) }) { null }
         contentBlocks?.let {
             clearCompileError()
             updateContents(it)

@@ -11,6 +11,7 @@ import me.tatarka.inject.annotations.Inject
 
 /**
  * ローカルの全ノートデータリストの状態を監視するクラス。
+ * メモリデータのリポジトリ。
  *
  * 注意 : エディタで開いているノートや現在選択中のノートの状態は扱わない。
  * */
@@ -18,6 +19,7 @@ import me.tatarka.inject.annotations.Inject
 @Singleton
 class NoteStateManager(
     private val noteRepository: NoteRepository,
+    private val editorStateManager: EditorStateManager,
 ) {
     private val _allNotes = MutableStateFlow<List<Note.Medium>>(emptyList())
     val allNotes: StateFlow<List<Note.Medium>> = _allNotes.asStateFlow()
@@ -32,7 +34,9 @@ class NoteStateManager(
     }
 
     suspend fun addNewNote() {
-        noteRepository.makeNew()
+        noteRepository.makeNew { newNoteId ->
+            editorStateManager.setFocus(newNoteId)
+        }
         loadAll()
     }
 }

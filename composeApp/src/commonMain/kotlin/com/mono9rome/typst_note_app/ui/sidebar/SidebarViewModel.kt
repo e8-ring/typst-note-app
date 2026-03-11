@@ -3,7 +3,6 @@ package com.mono9rome.typst_note_app.ui.sidebar
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mono9rome.typst_note_app.core.state.NoteStateManager
-import com.mono9rome.typst_note_app.core.state.SearchStateManager
 import com.mono9rome.typst_note_app.core.state.TagStateManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -16,7 +15,6 @@ import me.tatarka.inject.annotations.Inject
 class SidebarViewModel(
     private val noteStateManager: NoteStateManager,
     private val tagStateManager: TagStateManager,
-    private val searchStateManager: SearchStateManager,
 ) : ViewModel() {
 
     private val _menuBarState = MutableStateFlow(MenuBarContentType.None)
@@ -37,8 +35,6 @@ class SidebarViewModel(
         viewModelScope.launch {
             noteStateManager.loadAll()
             tagStateManager.loadAll()
-            searchStateManager.refreshNoteResult()
-            searchStateManager.refreshTagResult()
         }
     }
 }

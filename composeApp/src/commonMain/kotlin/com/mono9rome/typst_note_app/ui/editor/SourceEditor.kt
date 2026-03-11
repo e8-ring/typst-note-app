@@ -16,7 +16,7 @@ fun SourceEditor(modifier: Modifier = Modifier) {
     if (uiState != null) {
         SourceEditorBody(
             currentNoteId = uiState!!.currentNoteId,
-            sourceCode = uiState!!.currentNoteSourceCode,
+            source = uiState!!.currentNoteSource,
             fontSizeSp = uiState!!.fontSizeSp,
             onEdited = viewModel::updateSourceCode,
             modifier = modifier

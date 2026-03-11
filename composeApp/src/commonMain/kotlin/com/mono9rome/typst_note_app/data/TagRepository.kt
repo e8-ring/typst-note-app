@@ -29,14 +29,13 @@ class TagRepository(
         name: Note.Tag.Name,
         description: String?,
     ) = withContext(Dispatchers.IO) {
-        val currentTags = getAll()
-        val isNotConflict = currentTags.all { it.name != name }
+        val allTags = getAll()
+        val isNotConflict = allTags.all { it.name != name }
         ensure(isNotConflict) {
             raise(Err("同名のタグが既に存在します。"))
         }
         val newTag = Note.Tag(name, description)
-        val jsonString = json.encodeToString(currentTags + newTag)
-        fileManager.writeText(TAG_LIST_FILE_NAME, jsonString)
+        writeJson(allTags + newTag)
     }
 
     /* -- Read -- */
@@ -54,7 +53,21 @@ class TagRepository(
 
     /* -- Update -- */
 
+    private suspend fun writeJson(tags: List<Note.Tag>) {
+        val jsonString = json.encodeToString(tags)
+        fileManager.writeText(TAG_LIST_FILE_NAME, jsonString)
+    }
 
+    @Throws
+    suspend fun renameTag(tagId: Note.Tag.Id, newName: String) = withContext(Dispatchers.IO) {
+        val allTags = getAll().toMutableList()
+        val targetTagIndex = allTags.indexOfFirst { it.id == tagId }
+        val targetTag = allTags[targetTagIndex]
+        allTags[targetTagIndex] = targetTag.copy(
+            name = Note.Tag.Name(newName)
+        )
+        writeJson(allTags)
+    }
 
     private companion object {
         const val TAG_LIST_FILE_NAME = "tags.json"

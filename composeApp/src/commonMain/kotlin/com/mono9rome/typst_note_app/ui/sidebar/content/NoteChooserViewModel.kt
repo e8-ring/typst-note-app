@@ -2,10 +2,12 @@ package com.mono9rome.typst_note_app.ui.sidebar.content
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.mono9rome.typst_note_app.core.Search
 import com.mono9rome.typst_note_app.core.state.EditorStateManager
 import com.mono9rome.typst_note_app.core.state.NoteStateManager
 import com.mono9rome.typst_note_app.core.state.SearchStateManager
 import com.mono9rome.typst_note_app.model.Note
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import me.tatarka.inject.annotations.Inject
 
@@ -13,15 +15,25 @@ import me.tatarka.inject.annotations.Inject
 class NoteChooserViewModel(
     private val noteStateManager: NoteStateManager,
     private val editorStateManager: EditorStateManager,
-    private val searchStateManager: SearchStateManager
+    searchStateManager: SearchStateManager,
+    search: Search
 ) : ViewModel() {
 
-    val uiState = searchStateManager.noteSearchState
+    private val _query: MutableStateFlow<String> = MutableStateFlow("")
+
+    val uiState: StateFlow<List<Note.Medium>> = searchStateManager.stream(
+        listFlow = noteStateManager.allNotes,
+        queryFlow = _query,
+        filter = search.noteFilter
+    ).stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = emptyList()
+    )
 
     fun load() {
         viewModelScope.launch {
             noteStateManager.loadAll()
-            searchStateManager.refreshNoteResult()
         }
     }
 
@@ -30,7 +42,7 @@ class NoteChooserViewModel(
     }
 
     fun runNoteSearch(query: String) {
-        viewModelScope.launch { searchStateManager.runNoteSearch(query) }
+        _query.update { query }
     }
 
     fun setFocusNote(noteId: Note.Id) {

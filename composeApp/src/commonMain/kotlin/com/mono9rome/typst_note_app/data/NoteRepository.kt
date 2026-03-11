@@ -6,7 +6,6 @@ import arrow.core.raise.recover
 import com.mono9rome.typst_note_app.core.Counter
 import com.mono9rome.typst_note_app.model.Err
 import com.mono9rome.typst_note_app.model.Note
-import com.mono9rome.typst_note_app.model.SourceCode
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
@@ -23,11 +22,18 @@ class NoteRepository(
 
     /* -- Create -- */
 
-    suspend fun makeNew() {
+    suspend fun makeNew(also: suspend (Note.Id) -> Unit = {}) {
         recover({
+            // ノート id カウンターをインクリメントし、それを id に設定
             counter.increment()
             val newNoteId = counter.now()
+            // ノートの実体ファイルを作成
             fileManager.makeFile(newNoteId.toFilePath())
+            // ノートの初期メタデータを書き込み
+            val newNoteMetadata = Note.Metadata.default
+            updateMetadata(newNoteId) { newNoteMetadata }
+            // 追加処理
+            also(newNoteId)
         }) { e ->
             throw IOException(e.message)
         }
@@ -49,7 +55,7 @@ class NoteRepository(
     suspend fun get(noteId: Note.Id): Note = Note(
         id = noteId,
         metadata = getMetadata(noteId),
-        sourceCode = getSourceCode(noteId),
+        source = getSourceCode(noteId),
     )
 
     suspend fun getMetadata(noteId: Note.Id): Note.Metadata {
@@ -58,8 +64,8 @@ class NoteRepository(
     }
 
     context(_: Raise<Err>)
-    suspend fun getSourceCode(noteId: Note.Id): SourceCode =
-        SourceCode(fileManager.readText(noteId.toFilePath()))
+    suspend fun getSourceCode(noteId: Note.Id): Note.Source =
+        Note.Source(fileManager.readText(noteId.toFilePath()))
 
     private fun String.removeTypExtension(): String = this.dropLast(4)
 

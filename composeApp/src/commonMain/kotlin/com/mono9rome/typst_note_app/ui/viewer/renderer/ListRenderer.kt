@@ -75,6 +75,6 @@ fun BlockMathRendererPreview() {
     ListRenderer(
         currentNoteId = Note.Id("0000"),
         contentList = (SampleData.contentBlocks[1] as ContentList),
-        fontSizeSp = SampleData.textSizeSp
+        fontSizeSp = SampleData.TEXT_SIZE_SP
     )
 }

@@ -14,11 +14,20 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -34,13 +43,20 @@ fun SimpleTextField(
     modifier: Modifier = Modifier,
     placeholderText: String = "",
     singleLine: Boolean = true,
+    onEnter: () -> Unit = {},
+    onLeave: () -> Unit = {},
     expanded: Boolean = false,
     displayTrailingIcon: Boolean = false,
 ) {
     // フォーカス状態を監視するための InteractionSource
     val interactionSource = remember { MutableInteractionSource() }
     val isFocused by interactionSource.collectIsFocusedAsState()
+    // 一番最初に isFocused = false で呼ばれないようにするためのフラグ
+    var hasBeenFocused by remember { mutableStateOf(false) }
+    // エンター時にフォーカスを外すが、そのときに onLeave が実行されないようにする
+    var hasEnterActionBeenPerformed by remember { mutableStateOf(false) }
 
+    val focusManager = LocalFocusManager.current
     BasicTextField(
         value = enteredText,
         onValueChange = onValueChange,
@@ -55,7 +71,40 @@ fun SimpleTextField(
             .border(
                 width = 1.dp,
                 color = if (isFocused) activeTextColor else borderColor,
-            ),
+            )
+            // キーボードの入力を直前で監視する
+            .onPreviewKeyEvent { keyEvent ->
+                // エンターキー（またはテンキーのエンター）が「押された瞬間」かを判定
+                if ((keyEvent.key == Key.Enter || keyEvent.key == Key.NumPadEnter) &&
+                    keyEvent.type == KeyEventType.KeyDown
+                ) {
+                    onEnter()
+                    hasEnterActionBeenPerformed = true
+
+                    // フォーカスを外す（キャレットが消える）
+                    focusManager.clearFocus()
+
+                    // true を返すことで「このキー操作はここで消費した（改行を入力させない）」と宣言する
+                    return@onPreviewKeyEvent true
+                }
+
+                // エンターキー以外の操作は false を返し、通常のテキスト入力に回す
+                false
+            }
+            .onFocusChanged { focusState ->
+                if (focusState.isFocused) {
+                    hasBeenFocused = true
+                } else {
+                    if (hasBeenFocused) {
+                        if (hasEnterActionBeenPerformed) {
+                            hasEnterActionBeenPerformed = false
+                        } else {
+                            onLeave()
+                        }
+                        hasBeenFocused = false
+                    }
+                }
+            },
         textStyle = TextStyle(
             fontSize = 10.sp
         ),

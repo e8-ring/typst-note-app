@@ -4,7 +4,6 @@ import arrow.core.raise.recover
 import com.mono9rome.typst_note_app.data.NoteRepository
 import com.mono9rome.typst_note_app.di.Singleton
 import com.mono9rome.typst_note_app.model.Note
-import com.mono9rome.typst_note_app.model.SourceCode
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -101,18 +100,18 @@ class EditorStateManager(
         updateFocusedNoteTags { it - tagId }
     }
 
-    suspend fun updateFocusedNoteSourceCode(sourceCode: SourceCode) {
+    suspend fun updateFocusedNoteSourceCode(source: Note.Source) {
         checkFocusedNow()
 
         // 最初にローカルデータを編集
         noteRepository.write(
             noteId = editorState.value.focusedNote!!.id,
-            content = sourceCode.value
+            content = source.value
         )
         // 次にメモリデータに反映
         updateFocusedNote {
             it?.copy(
-                sourceCode = sourceCode,
+                source = source,
             )
         }
     }

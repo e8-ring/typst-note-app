@@ -1,14 +1,16 @@
 package com.mono9rome.typst_note_app.model
 
 import kotlinx.serialization.Serializable
+import java.text.SimpleDateFormat
+import java.util.Locale
 import java.util.UUID
 
-data class SourceCode(val value: String)
+
 
 data class Note(
     val id: Id,
     val metadata: Metadata,
-    val sourceCode: SourceCode,
+    val source: Source,
 ) {
     data class Light(
         val id: Id,
@@ -34,6 +36,8 @@ data class Note(
     data class Metadata(
         val title: Title?,
         val tags: List<Tag.Id>,
+        val createdDate: Timestamp = Timestamp.now(),
+        val lastUpdatedDate: Timestamp? = null
     ) {
         companion object {
             val default = Metadata(
@@ -79,6 +83,24 @@ data class Note(
         @JvmInline
         value class Id(val value: String)
     }
+
+    @Serializable
+    @JvmInline
+    value class Timestamp(val value: Long) {
+        fun format(pattern: String): String =
+            SimpleDateFormat(pattern, Locale.JAPAN).format(value)
+
+        companion object {
+            const val PATTERN_DAY_SLASHED = "yyyy/MM/dd"
+
+            /**
+             * 現在時刻をミリ秒単位で取得する。
+             * */
+            fun now(): Timestamp = Timestamp(System.currentTimeMillis())
+        }
+    }
+
+    data class Source(val value: String)
 }
 
 

@@ -178,12 +178,12 @@ val copyRustDesktop by tasks.registering(Copy::class) {
     into("src/jvmMain/resources/")
 }
 
-// Desktop アプリを実行/ビルドする前に、このタスクを必ず走らせるフック
-tasks.named("jvmProcessResources") {
-    dependsOn(copyRustDesktop)
-}
-
-// Kotlin のコンパイル前に必ずバインディングを生成するフック
-tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
-    dependsOn(generateUniFFIBindings)
-}
+//// Desktop アプリを実行/ビルドする前に、このタスクを必ず走らせるフック
+//tasks.named("jvmProcessResources") {
+//    dependsOn(copyRustDesktop)
+//}
+//
+//// Kotlin のコンパイル前に必ずバインディングを生成するフック
+//tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
+//    dependsOn(generateUniFFIBindings)
+//}
